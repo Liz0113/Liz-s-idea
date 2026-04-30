@@ -1,0 +1,2234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>✦ SAKURA TAROT ✦</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --cream: #FFF5EE;
+      --cream-dark: #F5E6D3;
+      --pink-light: #FFE4EC;
+      --pink: #FFB6C8;
+      --pink-deep: #FF8FAB;
+      --rose: #E891A0;
+      --gold: #D4A853;
+      --gold-light: #E8C97A;
+      --gold-dark: #B8860B;
+      --lavender: #E8D5F5;
+      --sky: #B8D4E8;
+      --text-brown: #8B6F5E;
+      --text-light: #B0897A;
+    }
+    body {
+      font-family: 'Noto Serif SC', serif;
+      background: var(--cream);
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text-brown);
+    }
+
+    /* ===== 背景 ===== */
+    .bg-layer {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: 
+        radial-gradient(ellipse at 15% 25%, rgba(255,182,200,0.35) 0%, transparent 45%),
+        radial-gradient(ellipse at 85% 20%, rgba(232,213,245,0.4) 0%, transparent 45%),
+        radial-gradient(ellipse at 50% 80%, rgba(184,212,232,0.3) 0%, transparent 50%),
+        linear-gradient(180deg, #FFEFF5 0%, var(--cream) 40%, #FFF0EB 100%);
+    }
+    .float-deco {
+      position: absolute; font-size: 18px; opacity: 0.25;
+      animation: floatDeco 10s ease-in-out infinite;
+    }
+    @keyframes floatDeco {
+      0%,100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-18px) rotate(12deg); }
+    }
+
+    /* ===== 页面 ===== */
+    .page {
+      position: fixed; inset: 0;
+      display: none; flex-direction: column;
+      align-items: center;
+      z-index: 10;
+    }
+    .page.active { display: flex; }
+
+    /* ==================== 首页 ==================== */
+    #start-page { justify-content: center; overflow: hidden; }
+
+    .wing-title-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      margin-bottom: 30px;
+    }
+    .wings-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .wing-left, .wing-right { font-size: 36px; opacity: 0.7; }
+    .main-title {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 52px;
+      background: linear-gradient(135deg, var(--rose), var(--pink-deep), var(--gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: 14px;
+    }
+    .sub-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 11px; letter-spacing: 10px; color: var(--text-light); margin-top: 4px;
+    }
+    .magic-area {
+      position: relative; width: 300px; height: 340px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 30px;
+    }
+    .outer-glow {
+      position: absolute; width: 360px; height: 360px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,182,200,0.2), transparent 70%);
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+    @keyframes pulseGlow { 0%,100%{transform:scale(1);opacity:0.6} 50%{transform:scale(1.08);opacity:1} }
+    .magic-ring {
+      position: absolute; width: 280px; height: 280px; border-radius: 50%;
+      border: 2px solid rgba(212,168,83,0.4);
+      box-shadow: 0 0 25px rgba(212,168,83,0.15), inset 0 0 25px rgba(212,168,83,0.08);
+      animation: spinRing 20s linear infinite;
+    }
+    .magic-ring::before {
+      content: ''; position: absolute; inset: 12px; border-radius: 50%;
+      border: 1.5px dashed rgba(212,168,83,0.3);
+      animation: spinRing 15s linear infinite reverse;
+    }
+    .magic-ring::after {
+      content: ''; position: absolute; inset: 32px; border-radius: 50%;
+      border: 1px solid rgba(255,143,171,0.3);
+      animation: spinRing 10s linear infinite;
+    }
+    @keyframes spinRing { to { transform: rotate(360deg); } }
+    .star-rays { position: absolute; width: 280px; height: 280px; pointer-events: none; }
+    .star-ray {
+      position: absolute; top: 50%; left: 50%; width: 2px; height: 60px;
+      background: linear-gradient(to bottom, var(--gold-light), transparent);
+      transform-origin: center top; margin-left: -1px; opacity: 0.5;
+    }
+    .center-card-display {
+      position: relative; width: 120px; height: 190px; z-index: 5;
+      animation: cardFloat 3s ease-in-out infinite;
+    }
+    @keyframes cardFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    .display-card-back {
+      position: absolute; inset: 0; border-radius: 10px; overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 45%, rgba(255,220,230,0.8) 0%, transparent 55%),
+        linear-gradient(170deg, #FFD4E5 0%, #FFB6C8 30%, #F5A0B8 70%, #E891A0 100%);
+      border: 2.5px solid var(--gold);
+      box-shadow: 0 8px 28px rgba(180,100,130,0.25), 0 2px 8px rgba(180,100,130,0.15), inset 0 0 20px rgba(255,255,255,0.3);
+    }
+    .display-card-back::before {
+      content: ''; position: absolute; inset: 5px; border-radius: 7px;
+      border: 1px dashed rgba(212,168,83,0.4);
+    }
+    .d-corner { position: absolute; width: 14px; height: 14px; border: 2px solid var(--gold); }
+    .d-corner.tl { top:7px;left:7px;border-right:none;border-bottom:none }
+    .d-corner.tr { top:7px;right:7px;border-left:none;border-bottom:none }
+    .d-corner.bl { bottom:7px;left:7px;border-right:none;border-top:none }
+    .d-corner.br { bottom:7px;right:7px;border-left:none;border-top:none }
+    .d-compass { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:48px;color:var(--gold);filter:drop-shadow(0 0 12px rgba(212,168,83,0.5));z-index:1 }
+    .d-wing-l,.d-wing-r { position:absolute;top:22px;font-size:24px;opacity:0.7;z-index:1 }
+    .d-wing-l { left:16px;transform:scaleX(-1) }
+    .d-wing-r { right:16px }
+    .d-banner { position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,transparent,rgba(212,168,83,0.3),transparent);padding:3px 18px;border-radius:8px;font-family:'Cinzel Decorative',serif;font-size:9px;letter-spacing:5px;color:var(--gold-dark);z-index:1 }
+    .d-star-s { position:absolute;font-size:7px;color:var(--gold);opacity:0.6;z-index:1 }
+    .inject-btn-wrap { position:relative;cursor:pointer;z-index:200 }
+    .inject-wings { display:flex;align-items:center;justify-content:center;gap:8px }
+    .inject-wing { font-size:26px;opacity:0.65;transition:all 0.3s }
+    .inject-btn {
+      padding: 16px 52px; font-size: 17px;
+      font-family: 'Ma Shan Zheng', cursive; color: white;
+      background: linear-gradient(135deg, var(--pink-deep), var(--rose));
+      border: none; border-radius: 28px; cursor: pointer;
+      letter-spacing: 6px;
+      box-shadow: 0 6px 24px rgba(232,143,160,0.35), 0 2px 8px rgba(232,143,160,0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
+    }
+    .inject-btn::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      transition: left 0.5s;
+    }
+    .inject-btn:hover::before { left: 100%; }
+    .inject-btn:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 12px 36px rgba(232,143,160,0.45); }
+    .inject-btn.injecting { animation: injectPulse 1.3s ease forwards; }
+    @keyframes injectPulse {
+      0%{transform:scale(1)} 30%{transform:scale(1.15);box-shadow:0 0 60px rgba(255,182,200,0.7)}
+      60%{transform:scale(1.05)} 100%{transform:scale(1);opacity:0}
+    }
+    .burst-particles { position:absolute;inset:0;pointer-events:none;z-index:100 }
+    .burst-particle { position:absolute;width:8px;height:8px;border-radius:50%;opacity:0 }
+    .burst-particle.active { animation: burstOut 1s ease forwards; }
+    @keyframes burstOut {
+      0%{transform:translate(-50%,-50%) scale(1);opacity:1}
+      100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}
+    }
+    .footer-info { position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--text-light);letter-spacing:3px;opacity:0.6;z-index:20 }
+
+    /* ==================== 牌阵选择页 ==================== */
+    #spread-page { overflow-y: auto; padding: 35px 20px 40px; }
+    .spread-header { text-align:center;margin-bottom:28px;margin-top:15px }
+    .spread-header-title { font-family:'Ma Shan Zheng',cursive;font-size:38px;background:linear-gradient(135deg,var(--rose),var(--pink-deep));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px }
+    .spread-header-sub { font-size:11px;color:var(--text-light);letter-spacing:5px }
+    .spread-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;width:100%;max-width:850px;padding-bottom:30px }
+    .spread-card {
+      background:rgba(255,255,255,0.75);border:1.5px solid rgba(212,168,83,0.25);border-radius:18px;
+      padding:22px;cursor:pointer;transition:all 0.35s ease;position:relative;overflow:hidden;backdrop-filter:blur(5px);
+    }
+    .spread-card::before {
+      content:'';position:absolute;top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg,var(--pink),var(--lavender),var(--gold-light));opacity:0;transition:opacity 0.3s;
+    }
+    .spread-card:hover::before { opacity:1 }
+    .spread-card:hover { transform:translateY(-5px);border-color:rgba(212,168,83,0.45);box-shadow:0 15px 40px rgba(180,100,130,0.15) }
+    .spread-icon { font-size:32px;margin-bottom:10px }
+    .spread-name { font-family:'Ma Shan Zheng',cursive;font-size:22px;color:var(--rose);margin-bottom:6px }
+    .spread-desc { font-size:13px;color:var(--text-light);line-height:1.6;margin-bottom:10px }
+    .spread-meta { display:flex;gap:12px;font-size:11px;color:var(--pink-deep) }
+
+    /* ==================== 抽牌页（牌阵布局） ==================== */
+    #draw-page { overflow: hidden; position: relative; }
+
+    /* 顶部信息条 */
+    .draw-topbar {
+      width: 100%; text-align: center;
+      padding: 16px 20px 10px;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+    .spread-title-bar {
+      font-family: 'Ma Shan Zheng', cursive; font-size: 26px;
+      color: var(--rose); margin-bottom: 6px;
+    }
+    .progress-row {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.75); padding: 7px 18px; border-radius: 22px;
+      border: 1px solid rgba(212,168,83,0.2); backdrop-filter: blur(5px);
+    }
+    .progress-dots { display: flex; gap: 6px; }
+    .progress-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(212,168,83,0.2); transition: all 0.3s;
+    }
+    .progress-dot.active { background: var(--gold); box-shadow: 0 0 8px rgba(212,168,83,0.5); }
+    .progress-dot.filled { background: var(--pink-deep); }
+
+    /* 交互模式切换 */
+    .mode-toggle {
+      position: absolute; top: 15px; right: 15px; z-index: 500;
+      display: flex; gap: 6px;
+    }
+    .mode-btn {
+      padding: 7px 14px; border-radius: 16px; border: 1.5px solid rgba(212,168,83,0.3);
+      background: rgba(255,255,255,0.85); color: var(--text-brown);
+      font-size: 12px; cursor: pointer; transition: all 0.25s; backdrop-filter: blur(5px);
+    }
+    .mode-btn.active {
+      background: linear-gradient(135deg, var(--pink-deep), var(--rose));
+      color: white; border-color: transparent;
+      box-shadow: 0 4px 14px rgba(232,143,160,0.35);
+    }
+
+    /* 牌阵容器 */
+    .spread-layout-area {
+      flex: 1; width: 100%; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .spread-layout-canvas {
+      position: relative;
+      /* 动态宽高由JS设置 */
+    }
+
+    /* 牌位槽 */
+    .slot-card {
+      position: absolute;
+      width: 72px; height: 114px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      transform: translate(-50%, -50%);
+    }
+    /* 未抽状态：牌背 */
+    .slot-card .s-back {
+      position: absolute; inset: 0; border-radius: 8px;
+      background:
+        radial-gradient(ellipse at 50% 42%, rgba(255,225,235,0.9) 0%, transparent 55%),
+        linear-gradient(165deg, #FFD4E5 0%, #FFB6C8 25%, #F5A0B8 60%, #E891A0 100%);
+      border: 2px solid var(--gold);
+      box-shadow: 0 4px 14px rgba(140,80,100,0.2), inset 0 0 12px rgba(255,255,255,0.2);
+      overflow: hidden;
+    }
+    .slot-card .s-back::before {
+      content: ''; position: absolute; inset: 4px; border-radius: 5px;
+      border: 1px dashed rgba(212,168,83,0.35);
+    }
+    .slot-card .s-back::after {
+      content: ''; position: absolute; inset: 8px; border-radius: 4px;
+      border: 1px solid rgba(212,168,83,0.2);
+    }
+    .s-corner { position:absolute;width:9px;height:9px;border:1.5px solid var(--gold) }
+    .s-corner.tl{top:4px;left:4px;border-right:none;border-bottom:none}
+    .s-corner.tr{top:4px;right:4px;border-left:none;border-bottom:none}
+    .s-corner.bl{bottom:4px;left:4px;border-right:none;border-top:none}
+    .s-corner.br{bottom:4px;right:4px;border-left:none;border-top:none}
+    .s-star { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:26px;color:var(--gold);filter:drop-shadow(0 0 6px rgba(212,168,83,0.35));z-index:1 }
+    .s-banner { position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-family:'Cinzel Decorative',serif;font-size:5.5px;letter-spacing:2px;color:var(--gold-dark);opacity:0.7;z-index:1 }
+    /* 牌位标签 */
+    .slot-label {
+      position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; color: var(--text-light); white-space: nowrap;
+      font-family: 'Ma Shan Zheng', cursive; font-size: 13px;
+    }
+    /* 当前需要抽的牌位 */
+    .slot-card.current {
+      filter: drop-shadow(0 0 12px rgba(212,168,83,0.6));
+      animation: slotPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes slotPulse {
+      0%,100%{transform:translate(-50%,-50%) scale(1)}
+      50%{transform:translate(-50%,-50%) scale(1.06)}
+    }
+    /* 悬浮高亮（手势/鼠标） */
+    .slot-card.hovered {
+      filter: drop-shadow(0 0 18px rgba(255,143,171,0.7));
+      transform: translate(-50%,-50%) scale(1.1) translateY(-8px) !important;
+      z-index: 50 !important;
+    }
+    /* 已抽：显示牌面 */
+    .slot-card .s-front {
+      position: absolute; inset: 0; border-radius: 8px;
+      border: 2px solid var(--gold);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      overflow: hidden;
+    }
+    .slot-card.drawn-slot .s-back { opacity: 0; }
+    .slot-card.drawn-slot .s-front { opacity: 1; pointer-events: auto; }
+    .slot-card.drawn-slot { animation: none !important; }
+    /* 翻牌动画 */
+    .slot-card.flipping {
+      animation: flipCard 0.5s ease !important;
+    }
+    @keyframes flipCard {
+      0%{transform:translate(-50%,-50%) scale(1.15) rotateY(0deg)}
+      50%{transform:translate(-50%,-50%) scale(1.2) rotateY(90deg)}
+      100%{transform:translate(-50%,-50%) rotateY(0deg)}
+    }
+    /* 牌面样式（渐变色） */
+    .sf-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(160deg, #FFF0F5, #FFE4EC, #FFF5F0);
+    }
+    .sf-sym { position:relative;font-size:22px;margin-bottom:4px;color:var(--rose);z-index:1 }
+    .sf-name { position:relative;font-size:10px;color:var(--rose);font-family:'Ma Shan Zheng',cursive;z-index:1;text-align:center;padding:0 4px }
+    .sf-ori { position:relative;font-size:9px;z-index:1;padding:2px 6px;border-radius:6px;margin-top:2px }
+    .sf-ori.up{background:rgba(212,168,83,0.15);color:var(--gold-dark)}
+    .sf-ori.rev{background:rgba(232,213,245,0.5);color:#9370DB}
+
+    /* 牌阵连线装饰 */
+    .spread-lines {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+
+    /* 摄像头 */
+    .camera-box {
+      position: fixed; top: 15px; right: 15px;
+      width: 130px; height: 98px; border-radius: 12px; overflow: hidden;
+      border: 2px solid rgba(212,168,83,0.3); z-index: 350; display: none;
+      background: #fff; box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    .camera-box.active { display: block; }
+    .camera-box video { width:100%;height:100%;object-fit:cover;transform:scaleX(-1) }
+
+    /* 手势光标 */
+    .hand-cursor {
+      position: fixed; width: 60px; height: 60px;
+      border: 2.5px solid var(--pink-deep); border-radius: 50%;
+      pointer-events: none; z-index: 200; display: none;
+      box-shadow: 
+        0 0 20px rgba(255,143,171,0.5),
+        0 0 40px rgba(255,182,200,0.3),
+        inset 0 0 20px rgba(255,228,236,0.3);
+      transition: transform 0.05s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .hand-cursor.active { display: block; }
+    .hand-cursor::after {
+      content: ''; position: absolute; inset: 10px;
+      border: 1.5px solid var(--gold); border-radius: 50%;
+      animation: cursorPulse 1.2s ease-in-out infinite;
+    }
+    .hand-cursor::before {
+      content: ''; position: absolute; inset: -8px;
+      border: 1px solid rgba(255,143,171,0.3); border-radius: 50%;
+      animation: cursorRing 2s ease-out infinite;
+    }
+    @keyframes cursorPulse { 0%,100%{transform:scale(1); opacity:1} 50%{transform:scale(0.75); opacity:0.7} }
+    @keyframes cursorRing { 0%{transform:scale(0.8); opacity:0.8} 100%{transform:scale(1.5); opacity:0} }
+    .hand-cursor.pinching {
+      border-color: var(--gold); 
+      background: rgba(212,168,83,0.2); 
+      transform: scale(0.7);
+      box-shadow: 
+        0 0 30px rgba(212,168,83,0.6),
+        0 0 60px rgba(212,168,83,0.4),
+        inset 0 0 25px rgba(212,168,83,0.3);
+    }
+
+    /* 手势特效 Canvas */
+    #gesture-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 200;
+      display: none;
+    }
+    body.gesture-mode #gesture-canvas { display: block; }
+
+    /* 扇形牌叠层 */
+    #fan-overlay {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 180;
+      display: none;
+    }
+    #fan-overlay.active { 
+      display: block; 
+    }
+
+    /* 扇形单张牌 */
+    .fan-card {
+      position: absolute;
+      width: 68px; height: 108px;
+      border-radius: 8px;
+      cursor: pointer;
+      pointer-events: auto;
+      transform-origin: center center;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: transform, left, top;
+      filter: drop-shadow(0 6px 16px rgba(140,80,100,0.25));
+    }
+    .fan-card:hover,
+    .fan-card.fan-hovered {
+      transform: scale(1.2) translateY(-35px) !important;
+      z-index: 100 !important;
+      filter: drop-shadow(0 0 25px rgba(255,143,171,0.7)) drop-shadow(0 8px 25px rgba(140,80,100,0.3));
+    }
+    .fan-card.fan-hovered .s-back {
+      border-color: var(--gold-light);
+      box-shadow: 
+        0 0 35px rgba(255,143,171,0.8),
+        0 8px 30px rgba(140,80,100,0.3),
+        inset 0 0 20px rgba(255,255,255,0.4);
+    }
+    .fan-card .s-back {
+      position: absolute; inset: 0; border-radius: 8px;
+      background:
+        radial-gradient(ellipse at 50% 30%, rgba(255,235,245,0.95) 0%, transparent 55%),
+        linear-gradient(165deg, #FFE4EC 0%, #FFB6C8 25%, #F5A0B8 65%, #E891A0 100%);
+      border: 2px solid var(--gold);
+      box-shadow: 
+        0 6px 20px rgba(140,80,100,0.2), 
+        inset 0 0 12px rgba(255,255,255,0.35);
+      overflow: hidden;
+    }
+    .fan-card .s-back::before {
+      content: ''; position: absolute; inset: 4px; border-radius: 5px;
+      border: 1px dashed rgba(212,168,83,0.4);
+    }
+    .fan-card.selected-card {
+      transform: scale(1.2) translateY(-40px) !important;
+      z-index: 100 !important;
+      animation: selectedGlow 1s ease-in-out infinite;
+    }
+    .fan-card.selected-card .s-back {
+      box-shadow: 
+        0 0 50px rgba(212,168,83,0.8), 
+        0 0 100px rgba(255,182,200,0.5),
+        inset 0 0 20px rgba(255,255,255,0.5);
+      border-color: var(--gold-light);
+    }
+    @keyframes selectedGlow {
+      0%, 100% { filter: drop-shadow(0 0 30px rgba(212,168,83,0.6)); }
+      50% { filter: drop-shadow(0 0 50px rgba(212,168,83,0.9)); }
+    }
+    /* 悬停光晕 */
+    .fan-glow {
+      position: absolute; inset: -15px;
+      border-radius: 15px;
+      background: radial-gradient(ellipse at center, rgba(255,143,171,0.5) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .fan-card:hover .fan-glow {
+      opacity: 1;
+    }
+
+    /* 飞行牌 */
+    .flying-tarot-card {
+      position: fixed;
+      width: 80px; height: 126px;
+      border-radius: 10px;
+      pointer-events: none;
+      z-index: 300;
+      transform-origin: center center;
+      filter: drop-shadow(0 10px 30px rgba(140,80,100,0.3));
+    }
+    .flying-tarot-card .s-back {
+      position: absolute; inset: 0; border-radius: 10px;
+      background:
+        radial-gradient(ellipse at 50% 35%, rgba(255,230,240,0.95) 0%, transparent 60%),
+        linear-gradient(165deg, #FFE4EC 0%, #FFB6C8 20%, #F5A0B8 55%, #E891A0 100%);
+      border: 3px solid var(--gold);
+      box-shadow: 
+        0 12px 40px rgba(140,80,100,0.45), 
+        0 0 30px rgba(255,143,171,0.6),
+        0 0 60px rgba(212,168,83,0.3),
+        inset 0 0 20px rgba(255,255,255,0.4);
+      overflow: hidden;
+    }
+    .flying-tarot-card .s-back::before {
+      content: ''; position: absolute; inset: 6px; border-radius: 7px;
+      border: 1.5px dashed rgba(212,168,83,0.5);
+    }
+    .flying-tarot-card .s-back::after {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+      animation: flyGlow 0.8s ease-in-out infinite;
+    }
+    @keyframes flyGlow {
+      0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+    }
+
+    /* 手势提示条 */
+    .gesture-tip {
+      position: fixed; bottom: 180px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.95); border: 1.5px solid rgba(212,168,83,0.3);
+      border-radius: 28px; padding: 14px 28px; font-size: 14px; color: var(--rose);
+      z-index: 250; display: none; 
+      box-shadow: 
+        0 8px 30px rgba(180,100,130,0.15),
+        0 2px 8px rgba(180,100,130,0.1),
+        inset 0 0 20px rgba(255,228,236,0.3);
+      letter-spacing: 1.5px; white-space: nowrap;
+      backdrop-filter: blur(10px);
+    }
+    .gesture-tip.active { 
+      display: block;
+      animation: tipPulse 3s ease-in-out infinite;
+    }
+    @keyframes tipPulse {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.02); }
+    }
+    .gesture-tip::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 15%;
+      right: 15%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+      border-radius: 1px;
+    }
+
+    /* 抽牌提示 */
+    .draw-hint {
+      font-size: 12px; color: var(--text-light); margin-top: 5px; letter-spacing: 1px;
+    }
+
+    /* ==================== 结果页 ==================== */
+    #result-page { overflow-y: auto; padding: 25px 18px 40px; }
+    .result-header { text-align:center;margin-bottom:25px;margin-top:10px }
+    .result-title { font-family:'Ma Shan Zheng',cursive;font-size:38px;background:linear-gradient(135deg,var(--rose),var(--pink-deep));-webkit-background-clip:text;-webkit-text-fill-color:transparent }
+    .result-spread-name { color:var(--pink-deep);font-size:13px;letter-spacing:3px;margin-top:6px }
+    .result-cards-row { display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-bottom:25px;width:100% }
+    .rcard { width:88px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(212,168,83,0.2);border-radius:12px;padding:12px 6px;text-align:center;backdrop-filter:blur(5px) }
+    .rcard-icon { font-size:28px;margin-bottom:4px }
+    .rcard-name { font-size:12px;color:var(--rose);font-family:'Ma Shan Zheng',cursive;margin-bottom:3px }
+    .rcard-pos { font-size:10px;color:var(--text-light);margin-bottom:5px }
+    .rcard-ori { font-size:10px;padding:2px 8px;border-radius:8px;display:inline-block }
+    .rcard-ori.up { background:rgba(212,168,83,0.15);color:var(--gold-dark) }
+    .rcard-ori.rev { background:rgba(232,213,245,0.3);color:#9370DB }
+    .reading-panel { background:rgba(255,255,255,0.75);border:1.5px solid rgba(212,168,83,0.2);border-radius:18px;padding:25px;max-width:720px;width:100%;backdrop-filter:blur(5px) }
+    .reading-panel h3 { font-family:'Ma Shan Zheng',cursive;font-size:22px;color:var(--rose);text-align:center;margin-bottom:20px }
+    .reading-body { font-size:14px;line-height:1.95;color:var(--text-brown) }
+
+    /* 单张牌解读卡片 */
+    .card-reading-block {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(212,168,83,0.18);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-reading-block::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      border-radius: 14px 14px 0 0;
+    }
+    .card-reading-block.up-card::before { background: linear-gradient(90deg, var(--gold-light), var(--pink)); }
+    .card-reading-block.rev-card::before { background: linear-gradient(90deg, #C8A2E8, #9370DB); }
+
+    .crb-header {
+      display: flex; align-items: flex-start; gap: 14px; margin-bottom: 12px;
+    }
+    .crb-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: bold; flex-shrink: 0;
+      font-family: 'Cinzel Decorative', serif;
+    }
+    .up-card .crb-num { background: rgba(212,168,83,0.15); color: var(--gold-dark); }
+    .rev-card .crb-num { background: rgba(147,112,219,0.12); color: #7B5EA7; }
+    .crb-title-wrap { flex: 1; }
+    .crb-pos-tag {
+      font-size: 11px; letter-spacing: 2px; color: var(--text-light);
+      margin-bottom: 3px;
+    }
+    .crb-card-name {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 20px; color: var(--rose);
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .crb-ori-badge {
+      font-size: 11px; padding: 2px 10px; border-radius: 10px;
+      font-family: 'Noto Serif SC', serif;
+    }
+    .up-card .crb-ori-badge { background: rgba(212,168,83,0.15); color: var(--gold-dark); }
+    .rev-card .crb-ori-badge { background: rgba(147,112,219,0.12); color: #7B5EA7; }
+
+    /* 关键词标签 */
+    .crb-keywords {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+    }
+    .kw-tag {
+      font-size: 11px; padding: 3px 10px; border-radius: 12px;
+      background: rgba(255,182,200,0.2); color: var(--rose);
+      border: 1px solid rgba(232,145,160,0.2);
+    }
+
+    /* 详细解读 */
+    .crb-detail {
+      font-size: 13.5px; line-height: 2; color: var(--text-brown);
+      margin-bottom: 10px;
+    }
+    .crb-detail-label {
+      font-size: 12px; color: var(--text-light); letter-spacing: 1px;
+      margin-bottom: 5px; display: flex; align-items: center; gap: 4px;
+    }
+
+    /* 行动建议 */
+    .crb-advice {
+      background: linear-gradient(135deg, rgba(255,228,236,0.45), rgba(232,213,245,0.35));
+      border-left: 3px solid var(--pink-deep);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      font-size: 13px; color: var(--text-brown);
+      line-height: 1.8;
+    }
+    .crb-advice-label {
+      font-size: 11px; color: var(--pink-deep); letter-spacing: 1px;
+      margin-bottom: 4px; font-weight: 600;
+    }
+
+    /* 总结面板 */
+    .reading-overall {
+      background: linear-gradient(135deg, rgba(255,228,236,0.5), rgba(232,213,245,0.4));
+      border: 1.5px solid rgba(212,168,83,0.2);
+      border-radius: 14px; padding: 20px;
+      margin-top: 4px;
+    }
+    .reading-overall h4 {
+      font-family: 'Ma Shan Zheng', cursive; font-size: 18px;
+      color: var(--rose); margin-bottom: 14px; text-align: center;
+    }
+    .energy-row {
+      display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .energy-pill {
+      flex: 1; min-width: 90px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(212,168,83,0.2);
+      border-radius: 10px; padding: 10px 14px; text-align: center;
+    }
+    .energy-pill .ep-num {
+      font-family: 'Cinzel Decorative', serif; font-size: 22px;
+      line-height: 1; margin-bottom: 4px;
+    }
+    .energy-pill.up-pill .ep-num { color: var(--gold); }
+    .energy-pill.rev-pill .ep-num { color: #9370DB; }
+    .energy-pill .ep-label { font-size: 11px; color: var(--text-light); }
+    .overall-text {
+      font-size: 13.5px; line-height: 1.95; color: var(--text-brown);
+    }
+    .overall-text .hl { color: var(--pink-deep); font-weight: 600; }
+    .overall-guide {
+      margin-top: 12px; padding: 12px 16px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 10px; font-size: 13px; color: var(--text-brown); line-height: 1.9;
+    }
+
+    .reading-body .ptitle { color:var(--rose);font-weight:600;margin-top:16px }
+    .reading-body .hl { color:var(--pink-deep) }
+    .reading-summary-box { margin-top:20px;padding:16px;background:linear-gradient(135deg,rgba(255,228,236,0.5),rgba(232,213,245,0.4));border-radius:12px;border-left:3px solid var(--pink-deep) }
+    .restart-btn { margin-top:30px;padding:14px 44px;font-size:15px;font-family:'Ma Shan Zheng',cursive;background:linear-gradient(135deg,var(--pink-deep),var(--rose));color:white;border:none;border-radius:26px;cursor:pointer;box-shadow:0 6px 24px rgba(232,143,160,0.35);transition:all 0.3s;letter-spacing:4px }
+    .restart-btn:hover { transform:translateY(-2px);box-shadow:0 10px 32px rgba(232,143,160,0.45) }
+  </style>
+</head>
+<body>
+  <div class="bg-layer" id="bg-layer"></div>
+  <div class="camera-box" id="camera-box"><video id="input-video" autoplay playsinline></video></div>
+  <!-- 手势特效 Canvas（全屏覆盖） -->
+  <canvas id="gesture-canvas"></canvas>
+  <!-- 扇形牌叠层（手势模式专用） -->
+  <div id="fan-overlay"></div>
+  <!-- 旧光标（点击模式用，手势模式由canvas取代） -->
+  <div class="hand-cursor" id="hand-cursor"></div>
+  <div class="gesture-tip" id="gesture-tip">✨ 挥动手掌滑动牌组  ·  食指悬停选中  ·  拇指食指捏合抽牌</div>
+
+  <!-- ========== 首页 ========== -->
+  <div class="page active" id="start-page">
+    <div class="wing-title-wrap">
+      <div class="wings-row">
+        <span class="wing-left">🪽</span>
+        <h1 class="main-title">魔法塔罗</h1>
+        <span class="wing-right" style="transform:scaleX(-1)">🪽</span>
+      </div>
+      <p class="sub-title">✦ SAKURA TAROT ✦</p>
+    </div>
+    <div class="magic-area" id="magic-area">
+      <div class="outer-glow"></div>
+      <div class="magic-ring"></div>
+      <div class="star-rays" id="star-rays"></div>
+      <div class="center-card-display">
+        <div class="display-card-back">
+          <div class="d-corner tl"></div><div class="d-corner tr"></div>
+          <div class="d-corner bl"></div><div class="d-corner br"></div>
+          <span class="d-wing-l">🪽</span><span class="d-wing-r">🪽</span>
+          <div class="d-compass">✧</div>
+          <div class="d-banner">SAKURA</div>
+          <span class="d-star-s" style="top:18px;left:50%;transform:translateX(-50%)">✦</span>
+          <span class="d-star-s" style="bottom:32px;left:50%;transform:translateX(-50%)">✦</span>
+          <span class="d-star-s" style="left:16px;top:50%;transform:translateY(-50%)">✦</span>
+          <span class="d-star-s" style="right:16px;top:50%;transform:translateY(-50%)">✦</span>
+        </div>
+      </div>
+      <div class="burst-particles" id="burst-particles"></div>
+    </div>
+    <div class="inject-btn-wrap" onclick="doInject()">
+      <div class="inject-wings">
+        <span class="inject-wing" style="transform:scaleX(-1)">🪽</span>
+        <button class="inject-btn" id="inject-btn" type="button">✦ 注入魔法 ✦</button>
+        <span class="inject-wing">🪽</span>
+      </div>
+    </div>
+    <p class="footer-info">✦ SAKURA TAROT ✦</p>
+  </div>
+
+  <!-- ========== 牌阵选择页 ========== -->
+  <div class="page" id="spread-page">
+    <div class="spread-header">
+      <h2 class="spread-header-title">选择牌阵</h2>
+      <p class="spread-header-sub">✦ CHOOSE YOUR SPREAD ✦</p>
+    </div>
+    <div class="spread-grid" id="spread-grid"></div>
+  </div>
+
+  <!-- ========== 抽牌页 ========== -->
+  <div class="page" id="draw-page">
+    <!-- 交互模式切换 -->
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-click" onclick="setMode('click')">👆 点击</button>
+      <button class="mode-btn" id="btn-gesture" onclick="setMode('gesture')">🖐 手势</button>
+    </div>
+
+    <!-- 顶部信息 -->
+    <div class="draw-topbar">
+      <div class="spread-title-bar" id="spread-title-label"></div>
+      <div class="progress-row">
+        <span style="font-size:11px;color:var(--text-light)">进度</span>
+        <div class="progress-dots" id="progress-dots"></div>
+        <span id="prog-txt" style="color:var(--rose);font-size:12px;font-weight:600">0/3</span>
+      </div>
+      <div class="draw-hint" id="draw-hint">点击发光牌位进行抽牌</div>
+    </div>
+
+    <!-- 牌阵布局区 -->
+    <div class="spread-layout-area" id="spread-layout-area">
+      <div class="spread-layout-canvas" id="spread-layout-canvas">
+        <svg class="spread-lines" id="spread-lines"></svg>
+        <!-- 牌位由JS动态生成 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 结果页 ========== -->
+  <div class="page" id="result-page">
+    <div class="result-header">
+      <h2 class="result-title">占卜结果</h2>
+      <p class="result-spread-name" id="res-spread-name"></p>
+    </div>
+    <div class="result-cards-row" id="res-cards"></div>
+    <div class="reading-panel">
+      <h3>✦ 塔罗解读 ✦</h3>
+      <div class="reading-body" id="reading-body"></div>
+    </div>
+    <center><button class="restart-btn" onclick="location.reload()">✦ 再次占卜 ✦</button></center>
+  </div>
+
+  <script>
+    // ===== 塔罗数据 =====
+    const CARDS = [
+      {
+        id:0, name:'愚者', sym:'0', emoji:'🌸',
+        keywords:['自由','纯真','新旅程','无限可能','跃入未知'],
+        up:'新的开始，冒险精神，信任直觉，无限可能',
+        rev:'鲁莽冲动，缺乏计划，过于天真',
+        upDetail:'愚者正位象征着一段全新的旅程正在向你敞开。你站在悬崖边缘，怀揣着无畏的热情与对未知的渴望，背着轻巧的行囊，准备跳入生命的洪流。这张牌提醒你：有时候，最勇敢的事就是放下对结果的执念，以赤子之心出发。你的直觉此刻极为灵敏，信任它，别让过多的"理性分析"阻碍你向前踏出那一步。',
+        revDetail:'愚者逆位提示你可能正在以冲动代替勇气。行动之前，值得停下来问自己：这真的是内心的召唤，还是对现状的逃避？你也许错过了某个重要的细节，或是对风险估计不足。建议先扎稳根基，做好准备，再轻装上阵，鲁莽地迈步可能让你在关键时刻绊倒。',
+        advice:'不必想清楚所有事情再出发，但请确保你的行动来自内心的真实渴望而非一时冲动。'
+      },
+      {
+        id:1, name:'魔术师', sym:'I', emoji:'✨',
+        keywords:['创造力','意志力','资源整合','显化','全力以赴'],
+        up:'创造力，意志力，化想法为现实',
+        rev:'能力浪费，缺乏自信',
+        upDetail:'魔术师正位代表你拥有将梦想化为现实的一切资源与能力——你的桌上摆放着权杖、圣杯、宝剑与星币，象征精神、情感、思维与物质的四重力量。现在是全力以赴的时刻，你的意志力与专注度能够创造奇迹。无论是启动一个项目、开展一段关系还是追求个人目标，宇宙正在配合你的意图运转。',
+        revDetail:'魔术师逆位暗示才能与潜力被搁置或误用。你可能有能力却缺乏自信去行动，或是陷入了"万事俱备，只欠东风"的拖延漩涡。也需要警惕身边是否有人以花言巧语操控你——魔术师的反面，正是善于迷惑的骗子。',
+        advice:'停止等待"完美时机"，你已经拥有了足够多的资源，现在需要的只是动手。'
+      },
+      {
+        id:2, name:'女祭司', sym:'II', emoji:'🌙',
+        keywords:['直觉','内在智慧','神秘','潜意识','沉默的力量'],
+        up:'直觉，内在智慧，潜意识',
+        rev:'忽视直觉，表面化',
+        upDetail:'女祭司正位代表深邃的内在世界正向你开放。她端坐于两根柱子之间，是已知与未知的守门人，提醒你此刻最深刻的答案不在外界，而在你自己的内心深处。放慢脚步，给自己一些静默与独处的时间，你的潜意识已经知道你需要知道的一切。直觉比逻辑更先感知到真相。',
+        revDetail:'女祭司逆位显示你可能正在忽略内心的声音，用忙碌和喧嚣来回避某些需要面对的感受。或是将秘密过度压抑，导致内在能量堵塞。此刻需要的是一段安静的独处时光，让被压制的直觉重新浮现。',
+        advice:'今天留出哪怕十分钟的安静，闭上眼睛问问自己真正的感受是什么。'
+      },
+      {
+        id:3, name:'皇后', sym:'III', emoji:'🌺',
+        keywords:['丰盛','创造','感官享受','滋养','母性能量'],
+        up:'丰饶，母性，享受生活',
+        rev:'过度依赖，缺乏创造',
+        upDetail:'皇后正位带来丰盛与滋养的能量。她坐于繁花盛开的森林中，象征大地的生命力、感官的愉悦与创造的喜悦。这张牌鼓励你接受生命中美好事物的馈赠，无论是爱情、财富还是创意的灵感。你值得被好好爱待，也有能力去给予与滋养他人。关注身体的感受，让自己好好享受当下。',
+        revDetail:'皇后逆位提示创造力受阻或过度将自我价值寄托于他人的认可。你可能在某段关系中扮演了太多的"给予者"而忘记滋养自己，或是因为担心失去而变得依赖和黏附。先回到自己内心，重建与自我丰盛感的连接。',
+        advice:'今天为自己做一件感官上愉悦的事——可以是一顿美食、一束花，或是一个长时间的沐浴。'
+      },
+      {
+        id:4, name:'皇帝', sym:'IV', emoji:'🏛️',
+        keywords:['权威','秩序','稳定','领导力','建设'],
+        up:'权威，结构，建立秩序',
+        rev:'专制独裁，缺乏灵活',
+        upDetail:'皇帝正位带来稳固的能量。他高坐于石制宝座，手握权杖，是秩序、规则与建设力的化身。这张牌提醒你：此刻需要的是建立清晰的框架与边界，用纪律和计划去实现目标，而不是依赖运气。你有足够的意志力和领导力去掌控局势，不要犹豫，果断地做出决定并坚持执行。',
+        revDetail:'皇帝逆位警示权力的滥用或过于僵化的控制欲。你可能正在用规则压制自己或他人的自由，或是在某段关系中显得过于专横。也可能相反——缺乏自律，让混乱主宰了本该有所规划的领域。',
+        advice:'检视你在哪里过于控制、在哪里又过于放任，寻找真正的自我纪律。'
+      },
+      {
+        id:5, name:'教皇', sym:'V', emoji:'🕊️',
+        keywords:['传统','信仰','精神指引','导师','集体智慧'],
+        up:'传统，信仰，精神指导',
+        rev:'打破传统，质疑权威',
+        upDetail:'教皇正位象征来自传统、信仰或导师的智慧与引导。你可能正处于需要指引的阶段，而答案存在于经过时间检验的智慧体系中——可能是宗教、哲学、家族传统或受尊敬的前辈的建议。同时，这张牌也可能预示一段正式的承诺——婚姻、契约或学习课程。信任已被证明有效的方法。',
+        revDetail:'教皇逆位呼唤你打破固有规则，质疑那些"应该"与"必须"。你可能感到现有体系对你有所束缚，内心渴望走一条不同寻常的路。此刻可以大胆质疑权威，但要区分"真正的内在呼唤"与"单纯的反叛"。',
+        advice:'向内探索你真正相信什么，哪些"规则"是你自愿接受的，哪些只是惯性遵循的枷锁。'
+      },
+      {
+        id:6, name:'恋人', sym:'VI', emoji:'💕',
+        keywords:['爱情','选择','价值观对齐','和谐','灵魂连接'],
+        up:'爱情，选择，和谐关系',
+        rev:'关系失衡，错误选择',
+        upDetail:'恋人正位不仅代表爱情，更是关于价值观的深度抉择。两个人站在天使的注视下，象征一段在灵魂层面真正共鸣的连接。这张牌提示你，此刻面临的选择不只是"我想要什么"，更是"我是谁、我相信什么"。无论是感情还是人生方向的选择，都值得从最深处的价值观出发，而非仅凭一时的欲望或外部压力。',
+        revDetail:'恋人逆位显示关系中的不平衡或一个重要选择被逃避。你可能在内心深处知道某段关系或某条道路并不符合你真实的渴望，却因为恐惧失去或改变而迟迟不愿面对。是时候诚实地面对自己的内心了。',
+        advice:'在任何重要决定前，问自己：这个选择是来自我内心最真实的渴望，还是来自恐惧与妥协？'
+      },
+      {
+        id:7, name:'战车', sym:'VII', emoji:'⚡',
+        keywords:['意志力','胜利','专注','克服障碍','前进动力'],
+        up:'意志力，胜利，克服困难',
+        rev:'失控，缺乏方向',
+        upDetail:'战车正位是强大意志力的象征。驾驭者掌控着两匹颜色相反的马——象征内在矛盾力量的统一——奔向胜利。你现在有足够的动力和专注去突破障碍，这不是靠蛮力，而是靠清晰的意图和坚定的自律。无论面对多大的阻力，继续前行，你比自己以为的更有韧性。胜利属于坚持到最后的人。',
+        revDetail:'战车逆位显示能量分散或方向不明。你可能感到疲惫，同时朝多个方向用力却收效甚微，或是被情绪洪流裹挟而失去掌控感。此时最需要的是停下来，重新厘清优先级，把所有能量汇聚到最重要的一件事上。',
+        advice:'把所有目标列出来，只留下最重要的那一个，其余暂时放下，全力以赴。'
+      },
+      {
+        id:8, name:'力量', sym:'VIII', emoji:'🦁',
+        keywords:['内在力量','温柔的勇气','耐心','以柔克刚','自我掌控'],
+        up:'内在力量，勇气，以柔克刚',
+        rev:'软弱，缺乏自信',
+        upDetail:'力量正位描绘了一位女子温柔而从容地驯服狮子，象征以爱与耐心胜过蛮力。你拥有远比自己意识到的更深的内在力量，而这种力量不是通过压制自己的恐惧或弱点来实现的，而是通过温柔地承认并与之共处。此刻需要你展示的，不是激烈的对抗，而是平静而坚定的存在感。',
+        revDetail:'力量逆位提示内在的不安全感正在影响你的行动。你可能正在为证明自己而用力过猛，或是相反——因为害怕失败而退缩。两者都是力量牌逆位的表现。真正的勇气，是承认恐惧的同时依然选择前行。',
+        advice:'今天对自己说：我已经足够强大，我不需要证明任何事。'
+      },
+      {
+        id:9, name:'隐者', sym:'IX', emoji:'🕯️',
+        keywords:['内省','孤独','智慧之光','寻真之旅','独处'],
+        up:'内省，独处，寻真理',
+        rev:'孤立，逃避现实',
+        upDetail:'隐者正位召唤你踏上一段向内的旅程。他手持明灯，孤身站于雪山之颠，不是因为恐惧世界，而是因为知道此刻最需要的答案只能在安静中找到。你可能已经走了很长一段路，现在需要停下来，消化经历，整合内在。给自己一段刻意的独处时间，不是逃离，而是充电与自我更新。',
+        revDetail:'隐者逆位显示过度孤立或以回避代替面对。你可能已经把自己封闭得太久，该是走出内心象牙塔、重新与他人连接的时候了。或者，你用"我需要想清楚"来拖延实际行动，而思考本身已经成为了一种逃避。',
+        advice:'如果已经独自思考很久，也许是时候和一个信任的人分享你的内心世界了。'
+      },
+      {
+        id:10, name:'命运之轮', sym:'X', emoji:'🎡',
+        keywords:['变化','周期','命运转折','时机','不可控'],
+        up:'变化，命运，周期循环',
+        rev:'厄运，抗拒改变',
+        upDetail:'命运之轮正位宣告一个新周期的开始，命运的齿轮正在转动。无论现在处于上升还是下行，轮子都会继续转，这是宇宙的法则。好消息是：如果你正在低谷，改变即将到来；如果你正在高峰，珍惜并为下一个转折做好准备。抓住当下的机遇，顺势而为，而不是试图控制无法控制的事。',
+        revDetail:'命运之轮逆位显示你正在抵抗改变，或感到命运对你不公。你可能对现状过于执着，不愿承认某个章节已经结束。抵抗变化会消耗大量能量，学会松手，允许生命按照自己的节奏流动。',
+        advice:'列出你正在执着控制却实际无法改变的事，练习一次"松手"。'
+      },
+      {
+        id:11, name:'正义', sym:'XI', emoji:'⚖️',
+        keywords:['公平','因果','真相','责任','清明判断'],
+        up:'公平，真理，因果责任',
+        rev:'不公，逃避责任',
+        upDetail:'正义正位带来清晰与公正的能量。宇宙的天平始终在称量我们的行为与意图，此刻你面临的或是一个需要公正判断的处境，或是一段因果的收获与清算。这张牌鼓励你诚实地面对现实，勇于承担责任，同时也提醒你：你所受到的，是你所给出的能量的回响。公正自有其时，但往往需要我们先做到对自己诚实。',
+        revDetail:'正义逆位提示逃避责任或对某件事的判断存在偏差。你可能在合理化自己的行为，或是固执地认为"不公平"而拒绝看到自己在其中的角色。真正的疗愈始于诚实地承认：我在这段经历中做了什么，选择了什么。',
+        advice:'有没有一件事，你一直觉得"是别人的错"？试着从对方的视角重新看一次。'
+      },
+      {
+        id:12, name:'倒吊人', sym:'XII', emoji:'🌿',
+        keywords:['暂停','新视角','牺牲','放手','顿悟'],
+        up:'牺牲，新视角，暂停放手',
+        rev:'抗拒牺牲，固执己见',
+        upDetail:'倒吊人正位是一张关于"暂停"的大牌。他倒悬于树上，脸上却带着平静甚至喜悦——因为这个非常规的视角带来了全新的洞见。此刻宇宙邀请你主动放慢，放下那些你一直紧握的东西，允许自己进入一段等待与酝酿的时期。这种"牺牲"并非损失，而是通往更深层理解的通道。有时，什么都不做，才是最有力量的行动。',
+        revDetail:'倒吊人逆位显示你拒绝放手，固守着某个让你停滞的视角或执念。你可能把必要的等待期变成了无谓的拖延，或是在消耗精力对抗本该接受的现实。问问自己：你还在等什么？是恐惧还是真的需要？',
+        advice:'今天试着放下一件事——可以是执念、期待，或是某段反复消耗你能量的对话。'
+      },
+      {
+        id:13, name:'死神', sym:'XIII', emoji:'🌑',
+        keywords:['转变','结束','新生','蜕变','告别'],
+        up:'转变，结束，新生放下',
+        rev:'抗拒结束，停滞不前',
+        upDetail:'死神正位几乎从不预示字面意义的死亡，而是一段深刻的蜕变——某件事、某段关系或某个版本的自己正走到终点，为崭新的可能性腾出空间。这个结局是不可回避的，也是必要的。试图抓住已经结束的东西，只会让你错过真正属于你的新开始。在这个告别的时刻，带着感谢与尊重，让它离去。',
+        revDetail:'死神逆位显示你正在强行延续一段已经结束的章节。也许是一段感情、一份工作、一种自我认知——你知道它该结束了，却害怕改变带来的空白。停滞比改变更消耗人，真正的新生在告别的那一刻才开始。',
+        advice:'有没有一件你早就知道该放下、却一直没有放下的事？今天给自己一个仪式感的"告别"。'
+      },
+      {
+        id:14, name:'节制', sym:'XIV', emoji:'🌊',
+        keywords:['平衡','调和','耐心','整合','适度'],
+        up:'平衡，调和，耐心中庸',
+        rev:'极端失衡，过度放纵',
+        upDetail:'节制正位是流动与平衡的象征。天使将水在两个杯子间来回倾倒，不浪费一滴，象征精准的整合与融合。此刻你被召唤去寻找中道——在工作与休息、给予与接受、热情与冷静之间找到微妙的平衡点。不要走极端，不要操之过急，而是用耐心与智慧，一点一点地将不同的力量调配成最和谐的状态。',
+        revDetail:'节制逆位显示某种极端正在影响你的生活。过度工作或过度懒散，暴饮暴食或自我苛待，感情中的冷热无常——都是节制逆位的信号。这是一个重新找回内在节律的提示，戒断极端，回归中道。',
+        advice:'检视你生活中哪个领域最"失衡"，今天做一个小小的校准。'
+      },
+      {
+        id:15, name:'恶魔', sym:'XV', emoji:'🔗',
+        keywords:['束缚','阴影','欲望','执念','觉醒的邀请'],
+        up:'束缚，欲望，认识阴影',
+        rev:'释放束缚，重获自由',
+        upDetail:'恶魔正位呈现的是两个人类被链条束缚于恶魔脚下的画面——但仔细看，锁链是宽松的，他们随时可以离开，却选择留下。这张牌不是在谴责你，而是邀请你诚实地看看自己在哪里甘愿成为欲望、恐惧或不健康习惯的囚徒。第一步是承认它的存在，不带评判地看见自己的阴影面，才是走向自由的开始。',
+        revDetail:'恶魔逆位带来解脱的能量——那些曾经捆绑你的链条正在松动。你可能正在从一段有毒的关系、一种上瘾的行为或一种限制性的信念体系中挣脱出来。这个过程也许伴随阵痛，但每一步都在让你更接近真正的自己。',
+        advice:'今天识别一种你的"自我破坏模式"，只是观察它，不需要立刻改变。'
+      },
+      {
+        id:16, name:'塔', sym:'XVI', emoji:'⚡',
+        keywords:['突变','觉醒','打破旧结构','震荡','重建'],
+        up:'突变，觉醒，打破旧结构',
+        rev:'避免灾难，延迟改变',
+        upDetail:'塔牌正位代表一次不可预期却必要的震荡。建立在不稳固基础上的结构终将崩塌，但这场"破坏"往往是通往真相与新生的唯一道路。你可能正在经历突如其来的变化，感到措手不及。记住：倒塌的是那些本就不该存在的东西，真正属于你的不会被摧毁。这是一次被迫的觉醒，请允许自己穿越它。',
+        revDetail:'塔逆位显示灾变正在被拖延，或你正在竭力维持一个摇摇欲坠的结构。短期看似避免了动荡，但压力的积累只会让最终的崩塌更剧烈。也许是时候主动做出调整，在塔倒之前先重新打好地基。',
+        advice:'有什么东西你知道已经破碎却还在苦苦维持？也许是时候让它自然落幕了。'
+      },
+      {
+        id:17, name:'星星', sym:'XVII', emoji:'⭐',
+        keywords:['希望','灵感','治愈','祝福','宁静的光'],
+        up:'希望，灵感，宁静祝福',
+        rev:'绝望，失去信心',
+        upDetail:'星星正位是塔罗牌中最温柔治愈的能量之一。在风暴之后，星光依然存在，她跪于水边，将生命的能量倾注于大地与河流。你值得被治愈，值得休息，值得相信生活会再次美好。这张牌是宇宙轻柔的承诺：希望是真实的，你所期待的美好正在以你看不见的方式向你靠近，请保持信心。',
+        revDetail:'星星逆位提示信心的动摇或希望的黯淡。你可能经历了太多失望，开始怀疑好事是否真的会发生。这是可以理解的，但请不要让绝望成为自我实现的预言。找回一件让你感到微弱光亮的小事，从那里重燃。',
+        advice:'今晚抬头看看星星，或者写下三件让你依然感到希望的小事。'
+      },
+      {
+        id:18, name:'月亮', sym:'XVIII', emoji:'🌕',
+        keywords:['幻觉','潜意识','恐惧','迷雾','直觉的考验'],
+        up:'幻觉，恐惧，面对未知',
+        rev:'恐惧消散，真相大白',
+        upDetail:'月亮正位代表迷雾、幻觉与潜意识的汹涌。此刻你所看到的未必是真相，你所恐惧的未必真实存在——月亮的光是倒映的，而非直射的。留意你的梦境和直觉，因为它们正在传递重要信息，但也要警惕因为过度的焦虑和想象而走入内耗。不要仅凭表面信息做出重大决定，等待迷雾散去。',
+        revDetail:'月亮逆位预示迷雾开始消散，真相即将浮现。你曾经感到困惑、不安或受到欺骗的事情正在走向澄清。长期压抑的恐惧或幻觉也开始失去它的力量，你正在重新找回清晰的感知。',
+        advice:'今天写下你最近一直感到困惑或恐惧的事，试着分辨哪些是事实，哪些是你的想象。'
+      },
+      {
+        id:19, name:'太阳', sym:'XIX', emoji:'☀️',
+        keywords:['成功','喜悦','活力','明朗','自信绽放'],
+        up:'成功，喜悦，活力明朗',
+        rev:'暂时阴霾，过度乐观',
+        upDetail:'太阳正位是塔罗中最明亮的祝福。孩子骑着白马在向日葵盛开的花园里奔跑，象征纯粹的喜悦、无拘无束的活力与真实的成功。你的努力正在或即将收获丰硕的成果，生命此刻充满光明。不要怀疑自己，不要压抑这种喜悦——你完全值得此刻的美好。大声地活着，让自己被看见。',
+        revDetail:'太阳逆位并非不好，只是阳光暂时被云遮住。你可能对一件原本值得高兴的事过于担忧，或是因为过度自信而忽视了某些细节。调整一下期待，但不必悲观——光明确实存在，只是姗姗来迟。',
+        advice:'今天做一件让你感到纯粹快乐的事，不要有任何"理由"或"意义"，就是因为快乐本身。'
+      },
+      {
+        id:20, name:'审判', sym:'XX', emoji:'🎺',
+        keywords:['觉醒','召唤','重生','评估','回应内心'],
+        up:'觉醒，重生，听从召唤',
+        rev:'自我怀疑，拒绝召唤',
+        upDetail:'审判正位代表一次灵魂层面的觉醒与召唤。号角吹响，过去的经历被重新整合，你正在进入一个全新的自我认知阶段。也许有一个召唤已经在你心里响了很久——一种职业转变、一段关系的决定或一个人生目标——是时候认真聆听并做出回应了。不要让恐惧阻止你接受这个为你准备的新开始。',
+        revDetail:'审判逆位显示你听到了内心的召唤，却因为种种顾虑而迟迟不敢回应。自我怀疑、害怕失败或不愿被评价正在让你原地踏步。这张牌提醒你：那个召唤是真实的，而你已经准备好了，比你以为的更准备好。',
+        advice:'有一件你"早就知道该做"却一直没做的事吗？今天为它迈出第一步，哪怕很小。'
+      },
+      {
+        id:21, name:'世界', sym:'XXI', emoji:'🌍',
+        keywords:['圆满','完成','整合','成就','新循环的门槛'],
+        up:'完成，圆满，成就整合',
+        rev:'未完成，缺乏整合',
+        upDetail:'世界正位是大阿卡那的最后一张，象征一个重要周期的完美完成。你已经经历了愚者出发以来的全部旅程，所有的考验、学习与成长都汇聚于此，成为你的一部分。这是一个值得庆祝的时刻——你做到了。同时，世界也是下一个愚者新旅程的起点，带着你所有的整合与智慧，你准备好踏入更宏大的下一章了。',
+        revDetail:'世界逆位提示某个重要的事项尚未真正完成，或你还没有充分整合已经走过的经历。也许有一个"未竟之事"正在悄悄地消耗你，或是你急于开始新的章节，却还没有真正与上一段道别。先完成，再出发。',
+        advice:'回顾最近完成的一件重要的事，花时间真正庆祝它，给自己一个仪式感的"毕业典礼"。'
+      }
+    ];
+
+    // ===== 牌阵定义 — 每张牌有 (cx, cy) 相对中心坐标 =====
+    // 单位：牌宽=72, 牌高=114, 间距约 90/130
+    const SPREADS = [
+      {
+        id:'single', name:'单张启示', icon:'✨', count:1, desc:'快速获取当下指引',
+        pos:['当下指引'],
+        layout:[{x:0,y:0}],
+        lines:[]
+      },
+      {
+        id:'time', name:'时间之箭', icon:'⏳', count:3, desc:'过去·现在·未来',
+        pos:['过去','现在','未来'],
+        layout:[{x:-105,y:0},{x:0,y:0},{x:105,y:0}],
+        lines:[[0,1],[1,2]]
+      },
+      {
+        id:'cross', name:'五芒十字', icon:'🌟', count:5, desc:'核心能量的四方向探索',
+        pos:['中心','上方','右方','下方','左方'],
+        layout:[{x:0,y:0},{x:0,y:-130},{x:110,y:0},{x:0,y:130},{x:-110,y:0}],
+        lines:[[1,0],[2,0],[3,0],[4,0]]
+      },
+      {
+        id:'celtic', name:'凯尔特十字', icon:'✝️', count:10, desc:'最经典的深度分析',
+        pos:['现状','阻碍','基础','过去','目标','未来','自我','环境','希望','结果'],
+        layout:[
+          {x:0,y:0},{x:0,y:0},   // 0,1 叠加（十字心）
+          {x:0,y:130},{x:-110,y:0},{x:0,y:-130},{x:110,y:0},
+          {x:240,y:195},{x:240,y:65},{x:240,y:-65},{x:240,y:-195}
+        ],
+        lines:[[2,0],[3,0],[4,0],[5,0],[6,7],[7,8],[8,9]]
+      },
+      {
+        id:'relation', name:'关系之镜', icon:'💕', count:5, desc:'深入分析两人关系',
+        pos:['你','对方','关系现状','挑战','未来'],
+        layout:[{x:-130,y:30},{x:130,y:30},{x:0,y:-30},{x:0,y:-160},{x:0,y:140}],
+        lines:[[0,2],[1,2],[2,3],[2,4]]
+      },
+      {
+        id:'career', name:'事业之路', icon:'💼', count:6, desc:'职业发展指引',
+        pos:['现状','优势','挑战','机会','建议','结果'],
+        layout:[
+          {x:0,y:130},{x:-105,y:0},{x:105,y:0},
+          {x:-105,y:-130},{x:105,y:-130},{x:0,y:-260}
+        ],
+        lines:[[0,1],[0,2],[1,3],[2,4],[3,5],[4,5]]
+      },
+      {
+        id:'spirit', name:'灵性成长', icon:'🔮', count:4, desc:'探索内在成长之路',
+        pos:['当前状态','内在阻碍','灵性助力','成长方向'],
+        layout:[
+          {x:0,y:130},{x:-105,y:0},{x:105,y:0},{x:0,y:-130}
+        ],
+        lines:[[0,1],[0,2],[1,3],[2,3]]
+      },
+      {
+        id:'year', name:'年度展望', icon:'📅', count:12, desc:'12个月运势指引',
+        pos:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+        layout: (() => {
+          const pts = [];
+          for(let i=0;i<12;i++){
+            const a = (i/12)*Math.PI*2 - Math.PI/2;
+            pts.push({x: Math.round(Math.cos(a)*210), y: Math.round(Math.sin(a)*210)});
+          }
+          return pts;
+        })(),
+        lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,0]]
+      }
+    ];
+
+    let spread = null, drawn = [];
+    let handsObj = null, cam = null;
+    let pinching = false, pinchCD = false;
+    let currentMode = 'click'; // 'click' | 'gesture'
+
+    // ===== 初始化背景 =====
+    function initBg() {
+      const bg = document.getElementById('bg-layer');
+      const decos = ['✦','✧','★','☆','❀','❁'];
+      for(let i=0;i<20;i++){
+        const d = document.createElement('span');
+        d.className = 'float-deco';
+        d.textContent = decos[i%decos.length];
+        d.style.left = Math.random()*100+'%';
+        d.style.top = Math.random()*100+'%';
+        d.style.animationDelay = Math.random()*8+'s';
+        d.style.fontSize = (Math.random()*12+10)+'px';
+        bg.appendChild(d);
+      }
+      const rays = document.getElementById('star-rays');
+      for(let i=0;i<12;i++){
+        const r = document.createElement('div');
+        r.className = 'star-ray';
+        r.style.transform = `rotate(${i*30}deg) translateY(140px)`;
+        rays.appendChild(r);
+      }
+      const bp = document.getElementById('burst-particles');
+      for(let i=0;i<24;i++){
+        const p = document.createElement('div');
+        p.className = 'burst-particle';
+        p.style.left = '50%'; p.style.top = '50%';
+        p.style.background = i%2===0 ? 'var(--pink-deep)' : 'var(--gold)';
+        bp.appendChild(p);
+      }
+    }
+
+    // ===== 注入魔法 =====
+    function doInject() {
+      const btn = document.getElementById('inject-btn');
+      btn.disabled = true; btn.classList.add('injecting');
+      document.querySelectorAll('.burst-particle').forEach((p,i) => {
+        const angle = (i/24)*360;
+        const d = 150 + Math.random()*100;
+        p.style.setProperty('--tx', `${Math.cos(angle*Math.PI/180)*d}px`);
+        p.style.setProperty('--ty', `${Math.sin(angle*Math.PI/180)*d}px`);
+        p.classList.add('active');
+      });
+      setTimeout(() => {
+        document.getElementById('start-page').classList.remove('active');
+        document.getElementById('spread-page').classList.add('active');
+        renderSpreads();
+      }, 850);
+    }
+
+    // ===== 渲染牌阵选择 =====
+    function renderSpreads() {
+      document.getElementById('spread-grid').innerHTML = SPREADS.map(s => `
+        <div class="spread-card" onclick="pickSpread('${s.id}')">
+          <div class="spread-icon">${s.icon}</div>
+          <div class="spread-name">${s.name}</div>
+          <div class="spread-desc">${s.desc}</div>
+          <div class="spread-meta"><span>✦ ${s.count}张牌</span><span>${s.pos.slice(0,3).join('·')}</span></div>
+        </div>`).join('');
+    }
+
+    // ===== 选择牌阵 =====
+    function pickSpread(id) {
+      spread = SPREADS.find(s => s.id === id);
+      drawn = [];
+      document.getElementById('spread-page').classList.remove('active');
+      document.getElementById('draw-page').classList.add('active');
+      document.getElementById('spread-title-label').textContent = spread.name;
+      document.getElementById('progress-dots').innerHTML =
+        Array(spread.count).fill(0).map((_,i) =>
+          `<div class="progress-dot ${i===0?'active':''}"></div>`).join('');
+      updateProg();
+      renderSpreadLayout();
+      initFanOverlay();
+      // 先激活牌组，再更新布局
+      document.getElementById('fan-overlay').classList.add('active');
+      updateCardLayout();  // 确保布局正确更新
+      document.querySelectorAll('.slot-card').forEach(slot => {
+        slot.style.pointerEvents = 'none';
+      });
+      // 更新提示文字
+      document.getElementById('draw-hint').textContent = '🌸 点击下方展开的牌组自由选牌';
+    }
+
+    // ===== 更新进度 =====
+    function updateProg() {
+      const total = spread.count, done = drawn.length;
+      document.getElementById('prog-txt').textContent = `${done}/${total}`;
+      document.querySelectorAll('.progress-dot').forEach((d,i) => {
+        d.classList.remove('active','filled');
+        if(i<done) d.classList.add('filled');
+        else if(i===done) d.classList.add('active');
+      });
+    }
+
+    // ===== 渲染牌阵布局 =====
+    function renderSpreadLayout() {
+      const canvas = document.getElementById('spread-layout-canvas');
+      const area = document.getElementById('spread-layout-area');
+      const svg = document.getElementById('spread-lines');
+      canvas.innerHTML = '';
+      canvas.appendChild(svg);
+      svg.innerHTML = '';
+
+      const layout = spread.layout;
+      if(!layout || layout.length === 0) return;
+
+      // 计算边界
+      const cardW = 72, cardH = 114, padding = 60;
+      const xs = layout.map(p=>p.x), ys = layout.map(p=>p.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const totalW = (maxX-minX) + cardW + padding*2;
+      const totalH = (maxY-minY) + cardH + padding*2;
+      const offX = -minX + padding + cardW/2;
+      const offY = -minY + padding + cardH/2;
+
+      // 缩放适应屏幕
+      const areaW = area.clientWidth || window.innerWidth;
+      const areaH = area.clientHeight || (window.innerHeight - 160);
+      const scale = Math.min(1, areaW / totalW, areaH / totalH);
+
+      canvas.style.width = (totalW * scale) + 'px';
+      canvas.style.height = (totalH * scale) + 'px';
+      canvas.style.transform = `scale(1)`;
+      svg.setAttribute('width', totalW * scale);
+      svg.setAttribute('height', totalH * scale);
+      svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
+
+      // 画连线
+      if(spread.lines) {
+        spread.lines.forEach(([a,b]) => {
+          if(a >= layout.length || b >= layout.length) return;
+          const pa = layout[a], pb = layout[b];
+          const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+          line.setAttribute('x1', (pa.x + offX) * scale);
+          line.setAttribute('y1', (pa.y + offY) * scale);
+          line.setAttribute('x2', (pb.x + offX) * scale);
+          line.setAttribute('y2', (pb.y + offY) * scale);
+          line.setAttribute('stroke', 'rgba(212,168,83,0.25)');
+          line.setAttribute('stroke-width', '1.5');
+          line.setAttribute('stroke-dasharray', '5,4');
+          svg.appendChild(line);
+        });
+      }
+
+      // 生成牌位
+      layout.forEach((pt, i) => {
+        // 凯尔特十字第0和1叠加（偏移一点）
+        const realX = (pt.x + offX) * scale + (i===1 ? 6 : 0);
+        const realY = (pt.y + offY) * scale + (i===1 ? -6 : 0);
+
+        const slot = document.createElement('div');
+        slot.className = 'slot-card' + (i === 0 ? ' current' : '');
+        slot.dataset.idx = i;
+        slot.style.left = realX + 'px';
+        slot.style.top = realY + 'px';
+        slot.style.width = (cardW * scale) + 'px';
+        slot.style.height = (cardH * scale) + 'px';
+
+        // 牌背内容
+        const back = document.createElement('div');
+        back.className = 's-back';
+        ['tl','tr','bl','br'].forEach(cls => {
+          const c = document.createElement('div');
+          c.className = `s-corner ${cls}`;
+          back.appendChild(c);
+        });
+        const star = document.createElement('div'); star.className = 's-star'; star.textContent = '✧';
+        const banner = document.createElement('div'); banner.className = 's-banner'; banner.textContent = 'TAROT';
+        back.appendChild(star); back.appendChild(banner);
+
+        // 牌面（空，抽牌后填充）
+        const front = document.createElement('div'); front.className = 's-front';
+        const bg = document.createElement('div'); bg.className = 'sf-bg';
+        const sym = document.createElement('div'); sym.className = 'sf-sym';
+        const name = document.createElement('div'); name.className = 'sf-name';
+        const ori = document.createElement('div'); ori.className = 'sf-ori';
+        front.appendChild(bg); front.appendChild(sym); front.appendChild(name); front.appendChild(ori);
+
+        // 标签
+        const label = document.createElement('div');
+        label.className = 'slot-label';
+        label.textContent = spread.pos[i] || '';
+        label.style.transform = `translateX(-50%) scale(${1/scale})`;
+        label.style.fontSize = Math.max(10, 13*scale) + 'px';
+
+        slot.appendChild(back); slot.appendChild(front); slot.appendChild(label);
+
+        slot.addEventListener('click', () => {
+          if(currentMode === 'click') drawCard(slot, i);
+        });
+        canvas.appendChild(slot);
+      });
+    }
+
+    // ===== 抽牌逻辑 =====
+    function drawCard(slotEl, idx) {
+      if(slotEl.classList.contains('drawn-slot')) return;
+      if(drawn.length >= spread.count) return;
+      // 必须按顺序抽
+      if(idx !== drawn.length) return;
+
+      const cid = Math.floor(Math.random() * 22);
+      const rev = Math.random() > 0.5;
+      const c = CARDS[cid];
+      const d = {
+        id: cid, name: c.name, sym: c.sym, reversed: rev,
+        meaning: rev ? c.rev : c.up, pos: spread.pos[idx]
+      };
+      drawn.push(d);
+
+      // 填充牌面
+      const front = slotEl.querySelector('.s-front');
+      front.querySelector('.sf-sym').textContent = c.sym;
+      front.querySelector('.sf-name').textContent = c.name + (rev ? '\n逆位' : '');
+      const oriEl = front.querySelector('.sf-ori');
+      oriEl.textContent = rev ? '↩逆位' : '↗正位';
+      oriEl.className = 'sf-ori ' + (rev ? 'rev' : 'up');
+
+      // 翻牌动画
+      slotEl.classList.remove('current','hovered');
+      slotEl.classList.add('flipping');
+      setTimeout(() => {
+        slotEl.classList.remove('flipping');
+        slotEl.classList.add('drawn-slot');
+        // 激活下一个牌位
+        const nextSlot = document.querySelector(`.slot-card[data-idx="${drawn.length}"]`);
+        if(nextSlot && !nextSlot.classList.contains('drawn-slot')) {
+          nextSlot.classList.add('current');
+        }
+        updateProg();
+        if(drawn.length === spread.count) {
+          setTimeout(showResult, 900);
+        }
+      }, 500);
+    }
+
+    // ===== 交互模式 =====
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('btn-click').classList.toggle('active', mode === 'click');
+      document.getElementById('btn-gesture').classList.toggle('active', mode === 'gesture');
+      const hint = document.getElementById('draw-hint');
+      
+      // 隐藏摄像头和手势相关UI
+      document.getElementById('camera-box').classList.remove('active');
+      document.getElementById('gesture-tip').classList.remove('active');
+      document.getElementById('hand-cursor').classList.remove('active');
+      
+      if(mode === 'click') {
+        hint.textContent = '🌸 点击下方展开的牌组自由选牌';
+        document.body.classList.remove('gesture-mode');
+        // 点击模式：显示牌组，隐藏摄像头
+        document.getElementById('fan-overlay').classList.add('active');
+        if(cam) { try{ cam.stop(); }catch(e){} cam = null; handsObj = null; }
+      } else {
+        hint.textContent = '🖐 挥手滑动牌组 · 悬停选牌 · 捏合抽牌';
+        document.body.classList.add('gesture-mode');
+        // 手势模式：显示牌组和摄像头
+        document.getElementById('fan-overlay').classList.add('active');
+        document.getElementById('gesture-tip').classList.add('active');
+        if(!cam) startCam();
+      }
+      
+      // 禁用牌阵槽位点击
+      document.querySelectorAll('.slot-card').forEach(slot => {
+        slot.style.pointerEvents = 'none';
+      });
+      
+      updateCardLayout();
+    }
+
+    // ===============================================================
+    // ===== 粒子交互手势系统 =====
+    // ===============================================================
+
+    // 粒子交互状态
+    const PS = {
+      particles: [],           // 粒子数组
+      handTrail: [],          // 手部轨迹点
+      lastHandX: null,
+      lastHandY: null,
+      handVelocity: { x: 0, y: 0 },
+      cursorScale: 1,         // 光标缩放（根据手掌张开程度）
+      isHovering: false,
+      hoveredCardIdx: -1,
+      pinchStartTime: 0,
+      cooldown: false
+    };
+
+    // 粒子参数
+    const PARTICLE_CONFIG = {
+      maxParticles: 200,
+      trailInterval: 16,
+      burstCount: 40,
+      starCount: 15
+    };
+
+    // 摄像头+MediaPipe画布
+    let gestureCanvas = null, gestureCtx = null;
+
+    async function startCam() {
+      const video = document.getElementById('input-video');
+
+      // 创建手势特效 canvas（覆盖全屏）
+      if(!gestureCanvas) {
+        gestureCanvas = document.getElementById('gesture-canvas');
+        gestureCtx = gestureCanvas.getContext('2d');
+        gestureCanvas.width = window.innerWidth;
+        gestureCanvas.height = window.innerHeight;
+      }
+
+      try {
+        handsObj = new Hands({
+          locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
+        });
+        handsObj.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.65,
+          minTrackingConfidence: 0.55
+        });
+        handsObj.onResults(onHandResults);
+
+        cam = new Camera(video, {
+          onFrame: async () => {
+            if(handsObj) await handsObj.send({ image: video });
+          },
+          width: 640, height: 480
+        });
+        await cam.start();
+        document.getElementById('camera-box').classList.add('active');
+        document.getElementById('fan-overlay').classList.add('active');
+
+        // 启动渲染循环
+        requestAnimationFrame(gestureRenderLoop);
+      } catch(e) {
+        console.warn('Camera init failed:', e.message);
+        document.getElementById('gesture-tip').textContent = '⚠️ 摄像头不可用，请使用点击模式';
+        document.getElementById('gesture-tip').classList.add('active');
+      }
+    }
+
+    // ===== MediaPipe 结果回调 =====
+    function onHandResults(res) {
+      if(currentMode !== 'gesture') return;
+      if(drawn.length >= spread.count) return;
+
+      if(!res.multiHandLandmarks?.length) {
+        PS.handTrail = [];
+        PS.lastHandX = null;
+        PS.lastHandY = null;
+        return;
+      }
+
+      const lm = res.multiHandLandmarks[0];
+
+      // 镜像X轴
+      const toScreen = (l) => ({
+        x: (1 - l.x) * window.innerWidth,
+        y: l.y * window.innerHeight
+      });
+
+      const index = toScreen(lm[8]);   // 食指尖
+      const thumb = toScreen(lm[4]);   // 拇指尖
+      const palm = toScreen(lm[0]);    // 手腕
+      const mid = toScreen(lm[12]);   // 中指尖
+
+      const handX = index.x, handY = index.y;
+      const thumbX = thumb.x, thumbY = thumb.y;
+
+      // 计算手掌张开程度（影响光标大小）
+      const fingerDist = Math.hypot(mid.x - palm.x, mid.y - palm.y);
+      const thumbIndexDist = Math.hypot(index.x - thumb.x, index.y - thumb.y);
+      PS.cursorScale = Math.min(1.5, Math.max(0.5, thumbIndexDist / 80));
+
+      // 计算手部速度
+      if(PS.lastHandX !== null) {
+        PS.handVelocity.x = handX - PS.lastHandX;
+        PS.handVelocity.y = handY - PS.lastHandY;
+      }
+      PS.lastHandX = handX;
+      PS.lastHandY = handY;
+
+      // 添加手部轨迹点
+      PS.handTrail.push({
+        x: handX,
+        y: handY,
+        age: 0,
+        size: 8 + PS.cursorScale * 4
+      });
+      if(PS.handTrail.length > 50) {
+        PS.handTrail.shift();
+      }
+
+      // 捏合检测
+      const pinchDist = thumbIndexDist;
+      const isPinching = pinchDist < 65;
+
+      // 悬停检测 - 检测哪张牌被悬停
+      if(!isPinching) {
+        detectCardHover(handX, handY);
+      }
+
+      // 捏合触发抽牌
+      if(isPinching && !PS.cooldown && PS.hoveredCardIdx >= 0) {
+        triggerParticleDraw(PS.hoveredCardIdx, handX, handY);
+        PS.cooldown = true;
+        PS.hoveredCardIdx = -1;
+        setTimeout(() => { PS.cooldown = false; }, 600);
+      }
+    }
+
+    // ===== 检测手部悬停在哪张牌上 =====
+    function detectCardHover(hx, hy) {
+      const cards = document.querySelectorAll('#fan-overlay .fan-card');
+      let found = -1;
+      let minDist = Infinity;
+      
+      cards.forEach((card) => {
+        card.classList.remove('fan-hovered');
+        if(card.style.display === 'none') return;
+        
+        const rect = card.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dist = Math.hypot(hx - cx, hy - cy);
+        
+        // 如果在100像素范围内，且比当前找到的更近
+        if(dist < 100 && dist < minDist) {
+          minDist = dist;
+          found = parseInt(card.dataset.cardIdx);
+        }
+      });
+      
+      // 移除之前的高亮
+      document.querySelectorAll('.fan-card.fan-hovered').forEach(c => c.classList.remove('fan-hovered'));
+      
+      // 高亮找到的卡牌
+      if(found >= 0) {
+        const hoverCard = document.querySelector(`#fan-overlay .fan-card[data-card-idx="${found}"]`);
+        if(hoverCard) {
+          hoverCard.classList.add('fan-hovered');
+        }
+      }
+      
+      PS.hoveredCardIdx = found;
+    }
+
+    // ===== 粒子交互抽牌 =====
+    function triggerParticleDraw(cardIdx, fromX, fromY) {
+      const targetSlotIdx = drawn.length;
+      if(targetSlotIdx >= spread.count) return;
+
+      const targetSlot = document.querySelector(`.slot-card[data-idx="${targetSlotIdx}"]`);
+      if(!targetSlot) return;
+
+      // 获取目标位置
+      const slotRect = targetSlot.getBoundingClientRect();
+      const toX = slotRect.left + slotRect.width / 2;
+      const toY = slotRect.top + slotRect.height / 2;
+
+      // 爆发大量粒子
+      burstParticles(fromX, fromY);
+      
+      // 创建飞行卡牌
+      const flyEl = document.createElement('div');
+      flyEl.className = 'flying-tarot-card';
+      flyEl.innerHTML = `
+        <div class="s-back">
+          <div class="s-corner tl"></div><div class="s-corner tr"></div>
+          <div class="s-corner bl"></div><div class="s-corner br"></div>
+          <div class="s-star">✧</div>
+          <div class="s-banner">TAROT</div>
+        </div>`;
+      flyEl.style.left = (fromX - 40) + 'px';
+      flyEl.style.top = (fromY - 63) + 'px';
+      document.body.appendChild(flyEl);
+
+      // 飞行轨迹动画
+      const startX = fromX - 40, startY = fromY - 63;
+      const endX = toX - 40, endY = toY - 63;
+      const duration = 600;
+      const startTime = performance.now();
+
+      function animFly(now) {
+        const t = Math.min((now - startTime) / duration, 1);
+        const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+        
+        const curX = startX + (endX - startX) * ease;
+        const curY = startY + (endY - startY) * ease;
+        const scale = 1 + Math.sin(t * Math.PI) * 0.3;
+        const rotate = ease * 360;
+        
+        flyEl.style.left = curX + 'px';
+        flyEl.style.top = curY + 'px';
+        flyEl.style.transform = `scale(${scale}) rotate(${rotate}deg)`;
+        flyEl.style.opacity = t > 0.85 ? (1 - (t - 0.85) / 0.15) : 1;
+
+        if(t < 1) {
+          requestAnimationFrame(animFly);
+        } else {
+          flyEl.remove();
+          performParticleDraw(cardIdx);
+        }
+      }
+      requestAnimationFrame(animFly);
+    }
+
+    // ===== 执行粒子抽牌逻辑 =====
+    function performParticleDraw(cardIdx) {
+      const targetSlotIdx = drawn.length;
+      if(targetSlotIdx >= spread.count) return;
+      
+      const targetSlot = document.querySelector(`.slot-card[data-idx="${targetSlotIdx}"]`);
+      if(!targetSlot) return;
+      
+      const rev = Math.random() > 0.5;
+      const c = CARDS[cardIdx];
+      const d = {
+        id: cardIdx, name: c.name, sym: c.sym, reversed: rev,
+        meaning: rev ? c.rev : c.up, pos: spread.pos[targetSlotIdx]
+      };
+      drawn.push(d);
+      
+      const front = targetSlot.querySelector('.s-front');
+      front.querySelector('.sf-sym').textContent = c.sym;
+      front.querySelector('.sf-name').textContent = c.name + (rev ? '\n逆位' : '');
+      const oriEl = front.querySelector('.sf-ori');
+      oriEl.textContent = rev ? '↩逆位' : '↗正位';
+      oriEl.className = 'sf-ori ' + (rev ? 'rev' : 'up');
+      
+      targetSlot.classList.add('flipping');
+      setTimeout(() => {
+        targetSlot.classList.remove('flipping');
+        targetSlot.classList.add('drawn-slot');
+        
+        const nextSlot = document.querySelector(`.slot-card[data-idx="${drawn.length}"]`);
+        if(nextSlot && !nextSlot.classList.contains('drawn-slot')) {
+          nextSlot.classList.add('current');
+        }
+        updateProg();
+        updateCardLayout();
+        
+        const slotRect = targetSlot.getBoundingClientRect();
+        spawnDrawParticles(slotRect.left + slotRect.width/2, slotRect.top + slotRect.height/2);
+        
+        if(drawn.length === spread.count) {
+          setTimeout(showResult, 900);
+        }
+      }, 500);
+    }
+
+    // ===== 粒子爆发效果 =====
+    function burstParticles(x, y) {
+      // 爆发粒子
+      for(let i=0; i<PARTICLE_CONFIG.burstCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 6 + Math.random() * 10;
+        PS.particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2,
+          life: 1.0,
+          decay: 0.02 + Math.random() * 0.02,
+          size: 5 + Math.random() * 8,
+          color: Math.random() > 0.5 ? '#D4A853' : '#FF8FAB',
+          type: 'burst'
+        });
+      }
+      
+      // 星星粒子
+      for(let i=0; i<PARTICLE_CONFIG.starCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 4 + Math.random() * 6;
+        PS.particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 3,
+          life: 1.0,
+          decay: 0.015 + Math.random() * 0.015,
+          size: 10 + Math.random() * 8,
+          color: '#FFE4EC',
+          type: 'star'
+        });
+      }
+    }
+
+    
+
+    const particlePool = [];
+    PS.particles = particlePool;
+
+    // ===== 抽牌时爆发粒子 =====
+    function spawnDrawParticles(x, y) {
+      if(!gestureCtx) return;
+      
+      for(let i=0; i<30; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 5 + Math.random() * 8;
+        const size = 4 + Math.random() * 6;
+        particlePool.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1.0,
+          decay: 0.025 + Math.random() * 0.02,
+          size: size,
+          color: Math.random() > 0.5 ? '#D4A853' : '#FF8FAB',
+          type: 'burst'
+        });
+      }
+      
+      for(let i=0; i<12; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 3 + Math.random() * 5;
+        particlePool.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1.0,
+          decay: 0.02 + Math.random() * 0.015,
+          size: 8 + Math.random() * 5,
+          color: '#FFE4EC',
+          type: 'star'
+        });
+      }
+    }
+
+    // ===== 渲染循环（粒子特效） =====
+    function gestureRenderLoop() {
+      // 检查是否在结果页，如果是则清空并停止绘制
+      const resultPage = document.getElementById('result-page');
+      if(resultPage && resultPage.classList.contains('active')) {
+        if(gestureCtx && gestureCanvas) {
+          gestureCtx.clearRect(0, 0, gestureCanvas.width, gestureCanvas.height);
+        }
+        requestAnimationFrame(gestureRenderLoop);
+        return;
+      }
+      
+      if(currentMode !== 'gesture') {
+        requestAnimationFrame(gestureRenderLoop);
+        return;
+      }
+      if(!gestureCanvas || !gestureCtx) {
+        requestAnimationFrame(gestureRenderLoop);
+        return;
+      }
+
+      // 更新canvas尺寸
+      if(gestureCanvas.width !== window.innerWidth || gestureCanvas.height !== window.innerHeight) {
+        gestureCanvas.width = window.innerWidth;
+        gestureCanvas.height = window.innerHeight;
+      }
+
+      const ctx = gestureCtx;
+      ctx.clearRect(0, 0, gestureCanvas.width, gestureCanvas.height);
+
+      // ---- 绘制粒子轨迹 ----
+      drawParticleTrail(ctx);
+
+      // ---- 绘制粒子 ----
+      drawParticles(ctx);
+
+      // ---- 绘制手势光标 ----
+      drawParticleCursor(ctx);
+
+      requestAnimationFrame(gestureRenderLoop);
+    }
+
+    // ===== 绘制粒子轨迹 =====
+    function drawParticleTrail(ctx) {
+      if(PS.handTrail.length < 2) return;
+
+      ctx.save();
+      
+      for(let i = 1; i < PS.handTrail.length; i++) {
+        const p = PS.handTrail[i];
+        const prev = PS.handTrail[i - 1];
+        
+        // 年龄增长
+        p.age += 0.03;
+        
+        // 根据年龄计算透明度
+        const alpha = Math.max(0, 1 - p.age);
+        if(alpha <= 0) continue;
+
+        const gradient = ctx.createLinearGradient(prev.x, prev.y, p.x, p.y);
+        gradient.addColorStop(0, `rgba(255, 143, 171, ${alpha * 0.3})`);
+        gradient.addColorStop(1, `rgba(212, 168, 83, ${alpha * 0.6})`);
+
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(p.x, p.y);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = p.size * alpha;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = '#FF8FAB';
+        ctx.shadowBlur = 15 * alpha;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // ===== 绘制粒子 =====
+    function drawParticles(ctx) {
+      for(let i = PS.particles.length - 1; i >= 0; i--) {
+        const p = PS.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.15; // 重力
+        p.vx *= 0.98; // 阻力
+        p.life -= p.decay;
+
+        if(p.life <= 0) {
+          PS.particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+
+        if(p.type === 'star') {
+          // 绘制星星
+          ctx.shadowBlur = 20;
+          ctx.font = `${p.size * p.life}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('✦', p.x, p.y);
+        } else {
+          // 绘制发光球
+          ctx.shadowBlur = 15;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // 外层光晕
+          ctx.fillStyle = p.color + '30';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life * 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    // ===== 绘制粒子光标 =====
+    function drawParticleCursor(ctx) {
+      if(PS.lastHandX === null) return;
+
+      const x = PS.lastHandX;
+      const y = PS.lastHandY;
+      const scale = PS.cursorScale;
+      const time = performance.now() / 1000;
+      const r = 35 * scale;
+
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+
+      // 外层扩散环
+      for(let i = 0; i < 3; i++) {
+        const rippleR = r + 15 + i * 10 + Math.sin(time * 3 + i) * 5;
+        const alpha = 0.2 - i * 0.05;
+        ctx.beginPath();
+        ctx.arc(x, y, rippleR, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 143, 171, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#FF8FAB';
+        ctx.shadowBlur = 15;
+        ctx.stroke();
+      }
+
+      // 主光圈
+      ctx.beginPath();
+      ctx.arc(x, y, r + Math.sin(time * 4) * 3, 0, Math.PI * 2);
+      ctx.strokeStyle = '#FF8FAB';
+      ctx.shadowColor = '#FF8FAB';
+      ctx.shadowBlur = 25;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 内环
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.5, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(212, 168, 83, 0.7)';
+      ctx.shadowColor = '#D4A853';
+      ctx.shadowBlur = 15;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 中心光点
+      const centerSize = 8 + Math.sin(time * 6) * 3;
+      ctx.fillStyle = '#FFE4EC';
+      ctx.shadowColor = '#FF8FAB';
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.arc(x, y, centerSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // ===== 初始化扇形牌叠层 =====
+    function initFanOverlay() {
+      const overlay = document.getElementById('fan-overlay');
+      overlay.innerHTML = '';
+
+      for(let i=0; i<22; i++) {
+        const card = document.createElement('div');
+        card.className = 'fan-card';
+        card.dataset.cardIdx = i;
+        card.dataset.fanIdx = i;
+        card.innerHTML = `
+          <div class="s-back">
+            <div class="s-corner tl"></div><div class="s-corner tr"></div>
+            <div class="s-corner bl"></div><div class="s-corner br"></div>
+            <div class="s-star">✧</div>
+            <div class="s-banner">TAROT</div>
+          </div>
+          <div class="fan-glow"></div>`;
+        
+        card.addEventListener('click', () => handleCardClick(i));
+        overlay.appendChild(card);
+      }
+      updateCardLayout();
+    }
+
+    // ===== 更新卡牌布局 =====
+    function updateCardLayout() {
+      const overlay = document.getElementById('fan-overlay');
+      if(!overlay || !overlay.classList.contains('active')) return;
+
+      const cards = overlay.querySelectorAll('.fan-card');
+      const centerX = window.innerWidth / 2;
+      // 将牌组放在屏幕底部
+      const bottomY = window.innerHeight - 160;
+      
+      // 收集未抽取的卡牌
+      const remainingCards = [];
+      cards.forEach((card) => {
+        const cardIdx = parseInt(card.dataset.cardIdx);
+        const isDrawn = drawn.some(d => d.id === cardIdx);
+        if (!isDrawn) {
+          remainingCards.push(card);
+        }
+      });
+      
+      const remaining = remainingCards.length;
+      const maxWidth = window.innerWidth - 100;
+      const spacing = Math.min(75, maxWidth / Math.max(remaining, 1));
+      const totalWidth = (remaining - 1) * spacing;
+      const startX = centerX - totalWidth / 2;
+      
+      // 隐藏已抽取的卡牌
+      cards.forEach((card) => {
+        const cardIdx = parseInt(card.dataset.cardIdx);
+        const isDrawn = drawn.some(d => d.id === cardIdx);
+        if (isDrawn) {
+          card.style.display = 'none';
+          card.style.pointerEvents = 'none';
+        }
+      });
+      
+      // 排列剩余的卡牌
+      remainingCards.forEach((card, idx) => {
+        card.style.display = 'block';
+        card.style.pointerEvents = 'auto';
+        
+        // 使用相对索引计算位置，确保居中排列
+        card.style.left = (startX + idx * spacing) + 'px';
+        card.style.top = bottomY + 'px';
+        card.style.transform = `rotate(${Math.sin(idx * 0.3) * 8}deg)`;
+        card.style.zIndex = 60;
+      });
+    }
+
+    // ===== 处理卡牌点击（点击模式） =====
+    function handleCardClick(cardIdx) {
+      if(currentMode !== 'click') return;
+      if(drawn.length >= spread.count) return;
+      
+      // 检查是否已选过
+      if(drawn.some(d => d.id === cardIdx)) return;
+      
+      // 获取卡牌元素
+      const cardEl = document.querySelector(`#fan-overlay .fan-card[data-card-idx="${cardIdx}"]`);
+      if(!cardEl) return;
+      
+      // 添加选中动画
+      cardEl.classList.add('selected-card');
+      
+      // 延迟后执行抽取
+      setTimeout(() => {
+        performDraw(cardIdx, cardEl);
+      }, 300);
+    }
+
+    // ===== 执行抽牌 =====
+    function performDraw(cardIdx, cardEl) {
+      const targetSlotIdx = drawn.length;
+      if(targetSlotIdx >= spread.count) return;
+      
+      const targetSlot = document.querySelector(`.slot-card[data-idx="${targetSlotIdx}"]`);
+      if(!targetSlot) return;
+      
+      // 随机正逆位
+      const rev = Math.random() > 0.5;
+      const c = CARDS[cardIdx];
+      const d = {
+        id: cardIdx, name: c.name, sym: c.sym, reversed: rev,
+        meaning: rev ? c.rev : c.up, pos: spread.pos[targetSlotIdx]
+      };
+      drawn.push(d);
+      
+      // 填充牌面
+      const front = targetSlot.querySelector('.s-front');
+      front.querySelector('.sf-sym').textContent = c.sym;
+      front.querySelector('.sf-name').textContent = c.name + (rev ? '\n逆位' : '');
+      const oriEl = front.querySelector('.sf-ori');
+      oriEl.textContent = rev ? '↩逆位' : '↗正位';
+      oriEl.className = 'sf-ori ' + (rev ? 'rev' : 'up');
+      
+      // 翻牌动画
+      targetSlot.classList.add('flipping');
+      setTimeout(() => {
+        targetSlot.classList.remove('flipping');
+        targetSlot.classList.add('drawn-slot');
+        
+        // 更新进度
+        const nextSlot = document.querySelector(`.slot-card[data-idx="${drawn.length}"]`);
+        if(nextSlot && !nextSlot.classList.contains('drawn-slot')) {
+          nextSlot.classList.add('current');
+        }
+        updateProg();
+        
+        // 更新布局，移除已选卡牌
+        updateCardLayout();
+        
+        // 粒子效果
+        const slotRect = targetSlot.getBoundingClientRect();
+        spawnDrawParticles(slotRect.left + slotRect.width/2, slotRect.top + slotRect.height/2);
+        
+        if(drawn.length === spread.count) {
+          setTimeout(showResult, 900);
+        }
+      }, 500);
+    }
+
+    // ===== 结果页 =====
+    function showResult() {
+      document.getElementById('draw-page').classList.remove('active');
+      ['camera-box','gesture-tip','hand-cursor','fan-overlay'].forEach(id => {
+        document.getElementById(id).classList.remove('active');
+      });
+      
+      // 清空手势粒子和轨迹
+      PS.particles = [];
+      PS.handTrail = [];
+      PS.lastHandX = null;
+      PS.lastHandY = null;
+      PS.hoveredCardIdx = -1;
+      
+      // 清空手势canvas
+      if(gestureCtx && gestureCanvas) {
+        gestureCtx.clearRect(0, 0, gestureCanvas.width, gestureCanvas.height);
+      }
+      
+      document.getElementById('result-page').classList.add('active');
+      document.getElementById('res-spread-name').textContent = `✦ ${spread.name} ✦`;
+
+      document.getElementById('res-cards').innerHTML = drawn.map(c => `
+        <div class="rcard">
+          <div class="rcard-icon">${CARDS[c.id].emoji || c.sym}</div>
+          <div class="rcard-name">${c.name}</div>
+          <div class="rcard-pos">${c.pos}</div>
+          <div class="rcard-ori ${c.reversed?'rev':'up'}">${c.reversed?'↩逆位':'↗正位'}</div>
+        </div>`).join('');
+
+      genReading();
+    }
+
+    // ===== 详细解读生成 =====
+    function genReading() {
+      const body = document.getElementById('reading-body');
+      let html = '';
+
+      // 每张牌的详细解读块
+      drawn.forEach((d, i) => {
+        const card = CARDS[d.id];
+        const isRev = d.reversed;
+        const blockClass = isRev ? 'rev-card' : 'up-card';
+        const detailText = isRev ? card.revDetail : card.upDetail;
+        const oriText = isRev ? '↩ 逆位' : '↗ 正位';
+        const kwTags = card.keywords.map(k => `<span class="kw-tag">${k}</span>`).join('');
+
+        // 牌位与牌名的联动说明
+        const posContext = getPosContext(spread.id, i, d.pos, card.name, isRev);
+
+        html += `
+        <div class="card-reading-block ${blockClass}">
+          <div class="crb-header">
+            <div class="crb-num">${i + 1}</div>
+            <div class="crb-title-wrap">
+              <div class="crb-pos-tag">✦ 第 ${i+1} 张 · ${d.pos}</div>
+              <div class="crb-card-name">
+                ${card.emoji || card.sym} ${card.name}
+                <span class="crb-ori-badge">${oriText}</span>
+              </div>
+            </div>
+          </div>
+          <div class="crb-keywords">${kwTags}</div>
+          <div class="crb-detail-label">🔮 牌义解读</div>
+          <div class="crb-detail">${detailText}</div>`;
+
+        if(posContext) {
+          html += `<div class="crb-detail-label" style="margin-top:8px">🌸 在「${d.pos}」位置的含义</div>
+          <div class="crb-detail">${posContext}</div>`;
+        }
+
+        html += `
+          <div class="crb-advice-label">💫 行动建议</div>
+          <div class="crb-advice">${card.advice}</div>
+        </div>`;
+      });
+
+      // 整体能量总结
+      const upCards = drawn.filter(c => !c.reversed);
+      const revCards = drawn.filter(c => c.reversed);
+      const upCount = upCards.length, revCount = revCards.length;
+
+      // 牌阵整体叙事
+      const narrative = getOverallNarrative();
+
+      html += `
+      <div class="reading-overall">
+        <h4>✦ 整体能量解读 ✦</h4>
+        <div class="energy-row">
+          <div class="energy-pill up-pill">
+            <div class="ep-num">${upCount}</div>
+            <div class="ep-label">正位 · 顺流能量</div>
+          </div>
+          <div class="energy-pill rev-pill">
+            <div class="ep-num">${revCount}</div>
+            <div class="ep-label">逆位 · 内化能量</div>
+          </div>
+          <div class="energy-pill" style="background:rgba(255,228,236,0.5)">
+            <div class="ep-num" style="color:var(--rose);font-size:18px">${drawn.length}</div>
+            <div class="ep-label">牌阵总张数</div>
+          </div>
+        </div>
+        <div class="overall-text">`;
+
+      // 正逆位比例分析
+      if(revCount === 0) {
+        html += `<p>✨ <span class="hl">全部正位</span>——此次牌阵所有牌均呈正位，整体能量流动顺畅明朗。外在环境和内在状态趋于协调，是采取积极行动、把握机遇的有利时机。宇宙在这段时间支持你向前走。</p>`;
+      } else if(upCount === 0) {
+        html += `<p>🌑 <span class="hl">全部逆位</span>——此次牌阵呈现了强烈的向内能量。这并非不吉之兆，而是提示你现在最重要的工作在内心——反思、沉淀与整合。外在行动可以暂缓，先照顾好你的内在世界。</p>`;
+      } else {
+        const ratio = upCount > revCount ? '正位居多' : (revCount > upCount ? '逆位居多' : '正逆各半');
+        const ratioDesc = upCount > revCount
+          ? `整体能量偏向外在流动与行动，但有${revCount}张逆位牌提醒你注意内在尚待处理的课题。`
+          : (revCount > upCount
+            ? `整体能量偏向内在消化与转化，外部行动可能需要更多准备，但${upCount}张正位牌为你指明了方向。`
+            : `正逆位能量完美对称，你正处于内外整合的关键节点，既有向外展开的动力，也有向内沉淀的必要。`);
+        html += `<p>⚖️ <span class="hl">${ratio}</span>——${ratioDesc}</p>`;
+      }
+
+      // 关键牌分析
+      const keyCard = getKeyCard();
+      if(keyCard) {
+        html += `<p style="margin-top:10px">🌟 <span class="hl">核心牌</span>——「${keyCard.name}」是此次牌阵的核心能量所在，${keyCard.coreMsg}</p>`;
+      }
+
+      html += `</div>
+        <div class="overall-guide">
+          ${narrative}
+        </div>
+      </div>`;
+
+      body.innerHTML = html;
+    }
+
+    // ===== 牌位联动说明 =====
+    function getPosContext(spreadId, idx, posName, cardName, isRev) {
+      const contexts = {
+        'time': [
+          isRev => `在「过去」的位置，${cardName}${isRev?'逆位':'正位'}揭示了曾经影响你的经历与积累的能量。这段过去既已成形，它的意义在于为你提供了成长的底色——${isRev?'也许是一段尚未完全消化的经历，仍在无形中影响你的选择':'正是这段经历赋予了你今天的力量与智慧'}。`,
+          isRev => `在「现在」的位置，${cardName}${isRev?'逆位':'正位'}描绘了你当下所处的能量状态与正在经历的核心主题。${isRev?'此刻你内在正经历一些阻力或转化，或许有些事情还未完全明朗':'这张牌所代表的能量是你当下真实拥有的资源，好好运用它'}。`,
+          isRev => `在「未来」的位置，${cardName}${isRev?'逆位':'正位'}显示了当你沿着当前轨迹继续前行时可能遇到的情境。${isRev?'这是一个预警信号——如果有些事情不做调整，未来可能面临的挑战':'这是宇宙给你的鼓励，前方的能量是支持你的'}。记住，未来并非固定，你的选择每天都在重塑它。`
+        ],
+        'cross': [
+          isRev => `作为「中心」牌，${cardName}代表了你此刻最核心的能量状态与处境。这是整个牌阵的心脏，所有其他牌的解读都与它相互呼应。`,
+          isRev => `在「上方」的位置，代表更高层面的目标、理想或外部影响。${cardName}在此位置揭示了你意识层面的渴望或外界环境的主导能量。`,
+          isRev => `在「右方」的位置，代表近期未来或即将进入你生命的能量。${cardName}提示你接下来可能遇到的情境。`,
+          isRev => `在「下方」的位置，代表深层基础或潜意识的驱动力。${cardName}揭示了影响你当下处境的根基能量。`,
+          isRev => `在「左方」的位置，代表过去的影响或已经走过的经历。${cardName}提示了哪些过去的能量仍在影响着你。`
+        ]
+      };
+
+      if(contexts[spreadId] && contexts[spreadId][idx]) {
+        return contexts[spreadId][idx](isRev);
+      }
+
+      // 通用牌位说明
+      return `在「${posName}」这个位置，${cardName}${isRev?'逆位':'正位'}的能量提示你${isRev?'在此领域有一些内在阻力或需要调整的模式，留意自己的内在感受':'在此领域具备良好的能量基础，可以信任自己的感知与行动'}。`;
+    }
+
+    // ===== 获取关键牌 =====
+    function getKeyCard() {
+      if(drawn.length === 0) return null;
+      // 选大阿卡那中编号最大的，或第一张正位牌，作为"核心牌"
+      const majorCards = drawn.filter(d => true); // 全是大阿卡那
+      const sorted = [...majorCards].sort((a,b) => b.id - a.id);
+      const key = sorted[0];
+      const card = CARDS[key.id];
+      const msgs = [
+        '它是这段旅程中能量最为浓缩的象征，值得你给予最多的关注与反思。',
+        '它的能量贯穿整个牌阵，指向了当下最需要被看见与整合的主题。',
+        '这张牌代表了此次占卜的最深层讯息，建议你在睡前冥想它的意象。',
+        '它携带的信息超越了所在的牌位，是整个占卜的点睛之笔。'
+      ];
+      return { name: card.name, coreMsg: msgs[key.id % msgs.length] };
+    }
+
+    // ===== 整体叙事 =====
+    function getOverallNarrative() {
+      const cardNames = drawn.map(d => `「${d.name}」`).join('、');
+      const hasHope = drawn.some(d => d.id === 17); // 星星
+      const hasTower = drawn.some(d => d.id === 16); // 塔
+      const hasSun = drawn.some(d => d.id === 19); // 太阳
+      const hasWorld = drawn.some(d => d.id === 21); // 世界
+      const hasMoon = drawn.some(d => d.id === 18); // 月亮
+      const revCount = drawn.filter(d => d.reversed).length;
+
+      let guide = `<strong>💌 给你的话</strong><br>`;
+
+      if(hasWorld) {
+        guide += `世界牌的出现是一个深刻的祝福——某个重要的章节正在走向完美的完成。你所经历的一切都是有意义的，此刻值得停下来，深深感谢这段旅程。`;
+      } else if(hasSun && hasHope) {
+        guide += `太阳与星星同时出现，是塔罗中最温暖的组合之一——光明是真实的，希望是可以触碰的。无论前路如何，你内在的那束光不会熄灭。`;
+      } else if(hasTower) {
+        guide += `塔牌的出现提示着一次不可避免的转化。请记住：真正属于你的不会在这场震荡中消失，倒塌的只是那些本就不稳固的结构。穿越它，你会发现更真实的自己。`;
+      } else if(hasMoon && revCount > 1) {
+        guide += `月亮与多张逆位牌的组合提示你此刻处于一段内化与沉淀的阶段。不必强行寻找答案，有些事情需要在安静中自然浮现。给自己多一点耐心与温柔。`;
+      } else if(revCount === drawn.length && drawn.length > 1) {
+        guide += `全逆位的牌阵是一个强烈的信号——宇宙在邀请你向内转。此刻不是向外求的时候，而是放下期待、与自己真正独处的时刻。在这段沉默中，你会找到下一步的清晰。`;
+      } else {
+        guide += `此次出现的${cardNames}共同构成了一幅属于你的能量地图。塔罗所呈现的是当下能量的趋势与可能性，而非固定的命运。你永远拥有自由意志去选择、去改变、去创造。`;
+      }
+
+      guide += `<br><br>🌸 <em>最后提醒自己：塔罗是一面镜子，映照的是你内心已经知道的真相。信任你的直觉，它比任何牌都更了解你的路。</em>`;
+      return guide;
+    }
+
+    // ===== 初始化 =====
+    window.onload = function() { initBg(); };
+  </script>
+</body>
+</html>
