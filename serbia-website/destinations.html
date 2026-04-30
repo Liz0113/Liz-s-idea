@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destinations - Serbia Tourism</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --forest: #2D4A3E; --earth: #8B7355; --cream: #F5F0E8;
+            --sand: #D4C5B5; --terracotta: #C4785C; --river: #5B8A9A; --night: #1A2F38;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Montserrat', sans-serif; background: var(--cream); color: var(--night); line-height: 1.7; }
+
+        /* Scroll Progress */
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--terracotta), var(--river), var(--forest)); z-index: 1001; width: 0; }
+
+        /* Custom Cursor */
+        .cursor-dot { width: 8px; height: 8px; background: var(--terracotta); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9998; mix-blend-mode: difference; }
+        .cursor-ring { width: 35px; height: 35px; border: 1.5px solid var(--terracotta); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9997; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s; }
+        .cursor-ring.hover { width: 55px; height: 55px; border-color: var(--sand); }
+
+        /* Navigation */
+        nav { position: fixed; top: 0; width: 100%; padding: 25px 60px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(26, 47, 56, 0.97); backdrop-filter: blur(20px); }
+        .logo { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600; color: white; text-decoration: none; letter-spacing: 4px; transition: all 0.3s; }
+        .logo:hover { letter-spacing: 8px; color: var(--sand); }
+        .nav-links { display: flex; gap: 40px; list-style: none; }
+        .nav-links a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.8rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; position: relative; padding: 8px 0; transition: color 0.3s; }
+        .nav-links a::before { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--sand); transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+        .nav-links a:hover { color: white; }
+        .nav-links a:hover::before { width: 100%; }
+        .nav-links a.active { color: var(--sand); }
+
+        /* Page Header */
+        .page-header { padding: 180px 60px 100px; background: linear-gradient(135deg, var(--night), var(--forest)); text-align: center; position: relative; overflow: hidden; }
+        .page-header::before { content: ''; position: absolute; inset: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="0.15" opacity="0.2"/></svg>'); background-size: 150px; animation: rotate 60s linear infinite; }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .page-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 4rem; font-weight: 400; color: white; margin-bottom: 20px; letter-spacing: 4px; position: relative; z-index: 1; animation: fadeInDown 1s ease; }
+        .page-header p { font-size: 1.1rem; color: var(--sand); font-weight: 300; max-width: 700px; margin: 0 auto; position: relative; z-index: 1; animation: fadeInUp 1s ease 0.3s both; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Tabs Navigation */
+        .dest-tabs { display: flex; justify-content: center; gap: 10px; padding: 30px 60px 0; background: var(--cream); position: sticky; top: 70px; z-index: 100; }
+        .dest-tab {
+            padding: 15px 35px; background: white; border: none; border-radius: 30px;
+            font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;
+            letter-spacing: 1px; cursor: pointer; transition: all 0.4s ease; color: var(--night);
+        }
+        .dest-tab.active { background: var(--night); color: white; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .dest-tab:hover:not(.active) { background: var(--sand); transform: translateY(-2px); }
+
+        /* Tab Content */
+        .tab-content { display: none; animation: tabIn 0.6s ease; }
+        .tab-content.active { display: block; }
+        @keyframes tabIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Sections */
+        .section { padding: 80px 60px; }
+        .section-white { background: white; }
+        .section-cream { background: var(--cream); }
+        .section-label { font-size: 0.75rem; letter-spacing: 5px; text-transform: uppercase; color: var(--earth); margin-bottom: 15px; }
+        .section-title { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 500; margin-bottom: 50px; }
+
+        /* Destination Items */
+        .dest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; max-width: 1200px; margin: 0 auto; }
+        .dest-item { border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.05); transition: all 0.5s cubic-bezier(0.4,0,0.2,1); }
+        .dest-item:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(0,0,0,0.12); }
+        .dest-item-img { position: relative; height: 300px; overflow: hidden; }
+        .dest-item-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; cursor: zoom-in; }
+        .dest-item:hover .dest-item-img img { transform: scale(1.08); }
+        .dest-item-badge { position: absolute; bottom: 15px; left: 15px; background: rgba(26,47,56,0.9); color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.7rem; letter-spacing: 1px; }
+        .dest-item-body { padding: 35px; }
+        .dest-item-body h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; margin-bottom: 15px; }
+        .dest-item-body p { font-size: 0.95rem; color: #555; line-height: 1.9; }
+        .tag { display: inline-block; background: var(--cream); padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; color: var(--forest); margin: 4px 4px 8px 0; transition: all 0.3s; cursor: default; }
+        .tag:hover { background: var(--forest); color: white; transform: scale(1.05); }
+
+        /* Full-width image section */
+        .full-img-section { position: relative; height: 400px; overflow: hidden; border-radius: 12px; max-width: 1200px; margin: 0 auto 50px; }
+        .full-img-section img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; cursor: zoom-in; }
+        .full-img-section:hover img { transform: scale(1.05); }
+        .full-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(26,47,56,0.85), transparent 60%); }
+        .full-img-content { position: absolute; bottom: 30px; left: 30px; right: 30px; color: white; }
+        .full-img-content h3 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 8px; }
+        .full-img-content p { font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+
+        /* Hidden Gems */
+        .gem-card { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.05); transition: all 0.5s; }
+        .gem-card:hover { transform: translateY(-8px); box-shadow: 0 25px 60px rgba(0,0,0,0.12); }
+        .gem-img { height: 100%; min-height: 350px; overflow: hidden; }
+        .gem-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; cursor: zoom-in; }
+        .gem-card:hover .gem-img img { transform: scale(1.08); }
+        .gem-body { padding: 50px; display: flex; flex-direction: column; justify-content: center; }
+        .gem-body h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; margin-bottom: 8px; }
+        .gem-body .subtitle { font-size: 0.85rem; color: var(--earth); font-style: italic; margin-bottom: 20px; }
+        .gem-body p { font-size: 0.95rem; color: #555; line-height: 1.9; }
+
+        /* Lightbox */
+        .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.4s; cursor: zoom-out; }
+        .lightbox.active { opacity: 1; visibility: visible; }
+        .lightbox img { max-width: 90%; max-height: 90vh; object-fit: contain; border-radius: 4px; transform: scale(0.8); transition: transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+        .lightbox.active img { transform: scale(1); }
+        .lightbox-close { position: absolute; top: 30px; right: 30px; color: white; font-size: 2rem; cursor: pointer; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; transition: all 0.3s; }
+        .lightbox-close:hover { border-color: white; transform: rotate(90deg); }
+
+        /* Back to Top */
+        .back-to-top { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; background: var(--night); border: none; border-radius: 50%; color: white; font-size: 1.2rem; cursor: pointer; opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 999; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .back-to-top.visible { opacity: 1; visibility: visible; }
+        .back-to-top:hover { background: var(--forest); transform: translateY(-5px) scale(1.1); }
+
+        /* Footer */
+        footer { background: var(--night); color: white; padding: 60px; text-align: center; }
+        footer p { font-size: 0.85rem; color: var(--sand); }
+
+        /* Reveal */
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.4,0,0.2,1); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 768px) {
+            .cursor-dot, .cursor-ring { display: none; }
+            .nav-links { display: none; }
+            .dest-grid { grid-template-columns: 1fr; }
+            .gem-card { grid-template-columns: 1fr; }
+            .dest-tabs { flex-wrap: wrap; padding: 20px; }
+            .section { padding: 60px 25px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img src="" alt="" id="lightboxImg">
+    <div class="lightbox-close">✕</div>
+</div>
+
+<nav>
+    <a href="index.html" class="logo">SERBIA</a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="destinations.html" class="active">Destinations</a></li>
+        <li><a href="culture.html">Culture</a></li>
+        <li><a href="practical.html">Insights</a></li>
+        <li><a href="guide.html">Guide</a></li>
+    </ul>
+</nav>
+
+<header class="page-header">
+    <h1>Destinations</h1>
+    <p>From historic capitals to pristine natural wonders, discover Serbia's most captivating places</p>
+</header>
+
+<!-- Tab Navigation -->
+<div class="dest-tabs">
+    <button class="dest-tab active" onclick="switchTab('urban')">🏙️ Urban Vibes</button>
+    <button class="dest-tab" onclick="switchTab('nature')">🌿 Nature & Landscapes</button>
+    <button class="dest-tab" onclick="switchTab('hidden')">💎 Hidden Gems</button>
+</div>
+
+<!-- Urban Vibes Tab -->
+<div class="tab-content active" id="tab-urban">
+    <section class="section section-white">
+        <p class="section-label">Urban Vibes</p>
+        <h2 class="section-title">City Pulse</h2>
+
+        <!-- Belgrade -->
+        <div class="full-img-section reveal">
+            <img src="destination/Belgrade.png" alt="Belgrade" onclick="openLightbox(this.src)">
+            <div class="full-img-overlay"></div>
+            <div class="full-img-content">
+                <h3>Belgrade — Gateway to the Balkans</h3>
+                <p>The thousand-year-old capital where the Danube and Sava rivers meet</p>
+            </div>
+        </div>
+
+        <div class="dest-grid">
+            <div class="dest-item reveal" style="transition-delay:0.1s">
+                <div class="dest-item-img">
+                    <img src="destination/Belgrade.png" alt="Kalemegdan" onclick="openLightbox(this.src)">
+                    <div class="dest-item-badge">Historic Fortress</div>
+                </div>
+                <div class="dest-item-body">
+                    <h3>Kalemegdan Fortress</h3>
+                    <p>Offering stunning views where the Danube and Sava rivers meet. The ancient walls have witnessed centuries of history — every stone tells a story of empires risen and fallen.</p>
+                    <span class="tag">🏛️ Historic</span><span class="tag">🌅 Panoramic Views</span>
+                </div>
+            </div>
+            <div class="dest-item reveal" style="transition-delay:0.2s">
+                <div class="dest-item-img">
+                    <img src="destination/Skadarliya.jpg" alt="Skadarlija" onclick="openLightbox(this.src)">
+                    <div class="dest-item-badge">Bohemian Quarter</div>
+                </div>
+                <div class="dest-item-body">
+                    <h3>Skadarlija District</h3>
+                    <p>In the evening, explore the bohemian quarter of Skadarlija, perfect for authentic food and live music. This cobblestone street is Belgrade's Montmartre.</p>
+                    <span class="tag">🎵 Live Music</span><span class="tag">🍽️ Traditional Food</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Novi Sad -->
+        <div style="margin-top:60px">
+            <div class="full-img-section reveal">
+                <img src="destination/Novi Sad1.png" alt="Novi Sad" onclick="openLightbox(this.src)">
+                <div class="full-img-overlay"></div>
+                <div class="full-img-content">
+                    <h3>Novi Sad — Serbia's Cultural Heart</h3>
+                    <p>Youthful energy meets artistic tradition</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dest-grid" style="margin-top:40px">
+            <div class="dest-item reveal" style="transition-delay:0.1s">
+                <div class="dest-item-img">
+                    <img src="destination/Novi Sad2.png" alt="Petrovaradin" onclick="openLightbox(this.src)">
+                    <div class="dest-item-badge">Iconic Fortress</div>
+                </div>
+                <div class="dest-item-body">
+                    <h3>Petrovaradin Fortress</h3>
+                    <p>The city's landmark and host of the world-famous EXIT Music Festival every summer. Stroll along the Danube and feel the youthful, artistic vibe of this university town.</p>
+                    <span class="tag">🎶 EXIT Festival</span><span class="tag">🏰 Fortress</span>
+                </div>
+            </div>
+            <div class="dest-item reveal" style="transition-delay:0.2s">
+                <div class="dest-item-img">
+                    <img src="文化/音乐节.jpg" alt="EXIT Festival" onclick="openLightbox(this.src)">
+                    <div class="dest-item-badge">Music Festival</div>
+                </div>
+                <div class="dest-item-body">
+                    <h3>EXIT Music Festival</h3>
+                    <p>One of Europe's top music festivals, held every July at Petrovaradin Fortress. 40+ stages with electronic, rock, pop, and global music, lasting late into the night.</p>
+                    <span class="tag">🎵 40+ Stages</span><span class="tag">🌙 Night Sessions</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Nature Tab -->
+<div class="tab-content" id="tab-nature">
+    <section class="section section-cream">
+        <p class="section-label">Nature & Landscapes</p>
+        <h2 class="section-title">Wild Beauty</h2>
+
+        <div class="full-img-section reveal">
+            <img src="destination/Tara National Park.png" alt="Tara" onclick="openLightbox(this.src)">
+            <div class="full-img-overlay"></div>
+            <div class="full-img-content">
+                <h3>House on the Drina — Symbol of Serbia</h3>
+                <p>A tiny wooden cabin standing alone on a rock in the middle of a river</p>
+            </div>
+        </div>
+
+        <div class="dest-grid">
+            <div class="dest-item reveal" style="transition-delay:0.1s">
+                <div class="dest-item-img">
+                    <img src="destination/Tara National Park.png" alt="Tara" onclick="openLightbox(this.src)">
+                    <div class="dest-item-badge">National Park</div>
+                </div>
+                <div class="dest-item-body">
+                    <h3>Tara National Park</h3>
+                    <p>One of Serbia's most beautiful national parks. The iconic House on the Drina has become the symbol of Serbia. Dense primeval forests and rich wildlife — ideal for hiking, photography, and reconnecting with nature.</p>
+                    <span class="tag">🌲 Primeval Forests</span><span class="tag">📸 Photography</span><span class="tag">🥾 Hiking</span>
+                </div>
+            </div>
+            <div class="dest-item reveal" style="transition-delay:0.2s">
+                <div class="dest-item-img">
+                    <img src="destination/Uvac Canyon.png" alt="Uvac" onclick="openLightbox(this.src)">
+                    <div class="dest-item-badge">Natural Wonder</div>
+                </div>
+                <div class="dest-item-body">
+                    <h3>Uvac Canyon</h3>
+                    <p>Famous for spectacular U-shaped meanders, often called one of the most beautiful canyons in Europe. A paradise for rare griffon vultures. Take a boat ride or hot-air balloon to admire breathtaking views.</p>
+                    <span class="tag">🦅 Vultures</span><span class="tag">🚣 Boat Ride</span><span class="tag">🎈 Balloon</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Hidden Gems Tab -->
+<div class="tab-content" id="tab-hidden">
+    <section class="section section-white">
+        <p class="section-label">Hidden Gems</p>
+        <h2 class="section-title">Secret Places</h2>
+
+        <div class="gem-card reveal">
+            <div class="gem-img">
+                <img src="destination/Drvengrad.jpg" alt="Drvengrad" onclick="openLightbox(this.src)">
+            </div>
+            <div class="gem-body">
+                <h3>Drvengrad (Wooden Town)</h3>
+                <p class="subtitle">Zlatibor Region</p>
+                <p>Built by renowned director Emir Kusturica as the set for his film <em>Life Is a Miracle</em>, this fairy-tale wooden village has become a living open-air museum. With charming wooden houses, cafés, and even a cinema, it offers a magical blend of art, folklore, and creativity.</p>
+                <div style="margin-top:15px">
+                    <span class="tag">🎬 Kusturica</span><span class="tag">🪵 Wooden Architecture</span><span class="tag">📸 Photography</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Travel Tips Section -->
+<div class="section section-white">
+    <p class="section-label" style="text-align:center">Travel Tips</p>
+    <h2 class="section-title" style="text-align:center">Getting Around</h2>
+    <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:40px;text-align:center">
+        <div class="reveal" style="padding:40px;background:var(--cream);border-radius:12px">
+            <div style="font-size:3rem;margin-bottom:15px">🚄</div>
+            <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;margin-bottom:15px">High-Speed Rail</h4>
+            <p style="font-size:0.85rem;color:#555;line-height:1.8">Belgrade to Novi Sad in just <strong>35 minutes</strong>. Tickets cost around 20 RMB. Comfortable, modern trains with Wi-Fi.</p>
+        </div>
+        <div class="reveal" style="transition-delay:0.1s;padding:40px;background:var(--cream);border-radius:12px">
+            <div style="font-size:3rem;margin-bottom:15px">🚗</div>
+            <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;margin-bottom:15px">Rent a Car</h4>
+            <p style="font-size:0.85rem;color:#555;line-height:1.8">For Tara, Uvac, Drvengrad — a car is recommended. Daily rates ~200-300 RMB. Roads are good, scenery is spectacular.</p>
+        </div>
+        <div class="reveal" style="transition-delay:0.2s;padding:40px;background:var(--cream);border-radius:12px">
+            <div style="font-size:3rem;margin-bottom:15px">🚌</div>
+            <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;margin-bottom:15px">Bus Network</h4>
+            <p style="font-size:0.85rem;color:#555;line-height:1.8">Extensive bus network connects all major cities and towns. Affordable (10-50 RMB per trip), reliable, and frequent.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Distance Guide -->
+<div class="section section-cream">
+    <p class="section-label" style="text-align:center">Distance Guide</p>
+    <h2 class="section-title" style="text-align:center">From Belgrade</h2>
+    <div style="max-width:800px;margin:0 auto;padding:40px;background:white;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.05)">
+        <table style="width:100%;border-collapse:collapse">
+            <tr style="border-bottom:2px solid var(--sand)">
+                <th style="padding:15px;text-align:left;font-family:'Cormorant Garamond',serif;font-size:1.2rem">Destination</th>
+                <th style="padding:15px;text-align:center">Distance</th>
+                <th style="padding:15px;text-align:center">Travel Time</th>
+            </tr>
+            <tr><td style="padding:12px">Novi Sad</td><td style="text-align:center;padding:12px">80 km</td><td style="text-align:center;padding:12px">35 min (train)</td></tr>
+            <tr><td style="padding:12px">Tara National Park</td><td style="text-align:center;padding:12px">200 km</td><td style="text-align:center;padding:12px">3.5 hours (car)</td></tr>
+            <tr><td style="padding:12px">Uvac Canyon</td><td style="text-align:center;padding:12px">250 km</td><td style="text-align:center;padding:12px">4 hours (car)</td></tr>
+            <tr><td style="padding:12px">Drvengrad / Zlatibor</td><td style="text-align:center;padding:12px">230 km</td><td style="text-align:center;padding:12px">4 hours (car)</td></tr>
+            <tr><td style="padding:12px">Niš</td><td style="text-align:center;padding:12px">240 km</td><td style="text-align:center;padding:12px">3 hours (bus/car)</td></tr>
+            <tr><td style="padding:12px">Subotica</td><td style="text-align:center;padding:12px">180 km</td><td style="text-align:center;padding:12px">2 hours (train)</td></tr>
+        </table>
+    </div>
+</div>
+
+<footer><p>Serbia Tourism Guide — Your Gateway to the Balkans</p></footer>
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// Scroll Progress
+window.addEventListener('scroll', () => {
+    const s = window.scrollY, d = document.documentElement.scrollHeight - window.innerHeight;
+    document.getElementById('scrollProgress').style.width = (s/d)*100 + '%';
+    document.getElementById('backToTop').classList.toggle('visible', s > 400);
+});
+
+// Custom Cursor
+const dot = document.getElementById('cursorDot'), ring = document.getElementById('cursorRing');
+let mx=0, my=0, rx=0, ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; dot.style.left=mx-4+'px'; dot.style.top=my-4+'px'; });
+(function ac(){ rx+=(mx-rx)*0.15; ry+=(my-ry)*0.15; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(ac); })();
+document.querySelectorAll('a,button,.dest-item,.dest-tab,.gem-card,.tag').forEach(el => {
+    el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+    el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+});
+
+// Tabs
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.dest-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    event.target.classList.add('active');
+    // Re-trigger reveal for new tab
+    document.querySelectorAll('#tab-'+tab+' .reveal').forEach(el => {
+        el.classList.remove('visible');
+        setTimeout(() => el.classList.add('visible'), 100);
+    });
+}
+
+// Reveal
+const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// Lightbox
+function openLightbox(src) { document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('active'); document.body.style.overflow='hidden'; }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); document.body.style.overflow=''; }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
+</script>
+</body>
+</html>

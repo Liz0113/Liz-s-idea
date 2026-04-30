@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industry & Insights - Serbia Tourism</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --forest: #2D4A3E; --earth: #8B7355; --cream: #F5F0E8; --sand: #D4C5B5; --terracotta: #C4785C; --river: #5B8A9A; --night: #1A2F38; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Montserrat', sans-serif; background: var(--cream); color: var(--night); line-height: 1.7; }
+
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--terracotta), var(--river), var(--forest)); z-index: 1001; width: 0; }
+        .cursor-dot { width: 8px; height: 8px; background: var(--river); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9998; mix-blend-mode: difference; }
+        .cursor-ring { width: 35px; height: 35px; border: 1.5px solid var(--river); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9997; transform: translate(-50%,-50%); transition: width 0.3s, height 0.3s; }
+        .cursor-ring.hover { width: 55px; height: 55px; border-color: var(--sand); }
+
+        nav { position: fixed; top: 0; width: 100%; padding: 25px 60px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: rgba(26,47,56,0.97); backdrop-filter: blur(20px); }
+        .logo { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600; color: white; text-decoration: none; letter-spacing: 4px; transition: all 0.3s; }
+        .logo:hover { letter-spacing: 8px; color: var(--sand); }
+        .nav-links { display: flex; gap: 40px; list-style: none; }
+        .nav-links a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.8rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; position: relative; padding: 8px 0; transition: color 0.3s; }
+        .nav-links a::before { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--sand); transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+        .nav-links a:hover { color: white; }
+        .nav-links a:hover::before { width: 100%; }
+        .nav-links a.active { color: var(--sand); }
+
+        .page-header { padding: 180px 60px 100px; background: linear-gradient(135deg, var(--river), #3d6b7a); text-align: center; position: relative; overflow: hidden; }
+        .page-header::before { content:''; position: absolute; inset: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="0.15" opacity="0.2"/></svg>'); background-size: 150px; animation: rotate 60s linear infinite; }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .page-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 4rem; font-weight: 400; color: white; margin-bottom: 20px; letter-spacing: 4px; position: relative; z-index: 1; animation: fadeInDown 1s ease; }
+        .page-header p { font-size: 1.1rem; color: rgba(255,255,255,0.9); font-weight: 300; max-width: 700px; margin: 0 auto; position: relative; z-index: 1; animation: fadeInUp 1s ease 0.3s both; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section { padding: 100px 60px; opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.4,0,0.2,1); }
+        .section.visible { opacity: 1; transform: translateY(0); }
+        .section-cream { background: var(--cream); }
+        .section-white { background: white; }
+        .section-dark { background: var(--night); color: white; }
+        .section-label { font-size: 0.75rem; letter-spacing: 5px; text-transform: uppercase; color: var(--earth); margin-bottom: 15px; }
+        .section-dark .section-label { color: var(--sand); }
+        .section-title { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 500; margin-bottom: 50px; }
+        .section-dark .section-title { color: white; }
+
+        /* Stats Bar */
+        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; max-width: 1200px; margin: -40px auto 60px; background: var(--forest); border-radius: 12px; overflow: hidden; position: relative; z-index: 1; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .stat { text-align: center; padding: 40px 20px; border-right: 1px solid rgba(255,255,255,0.1); transition: background 0.3s; }
+        .stat:last-child { border-right: none; }
+        .stat:hover { background: rgba(255,255,255,0.1); }
+        .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 3rem; font-weight: 600; color: white; }
+        .stat-label { font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--sand); margin-top: 5px; }
+
+        /* Insight Cards with Images */
+        .insights-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; max-width: 1000px; margin: 0 auto; }
+        .insight-card { border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.05); transition: all 0.5s cubic-bezier(0.4,0,0.2,1); }
+        .insight-card:hover { transform: translateY(-10px); box-shadow: 0 25px 60px rgba(0,0,0,0.12); }
+        .insight-card-img { height: 220px; overflow: hidden; position: relative; }
+        .insight-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; cursor: zoom-in; }
+        .insight-card:hover .insight-card-img img { transform: scale(1.08); }
+        .insight-card-badge { position: absolute; top: 15px; left: 15px; background: var(--river); color: white; padding: 5px 14px; border-radius: 20px; font-size: 0.7rem; letter-spacing: 1px; }
+        .insight-card-body { padding: 30px; }
+        .insight-card-body h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; margin-bottom: 12px; }
+        .insight-card-body p { font-size: 0.9rem; color: #555; line-height: 1.9; }
+
+        /* Belt & Road */
+        .belt-section { max-width: 800px; margin: 0 auto; }
+        .belt-img { width: 100%; height: 300px; object-fit: cover; border-radius: 12px 12px 0 0; cursor: zoom-in; }
+        .belt-content { padding: 50px; background: var(--cream); border-radius: 0 0 12px 12px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        .belt-content h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; margin-bottom: 20px; }
+        .belt-content p { font-size: 1rem; color: #555; line-height: 2; }
+
+        /* Lightbox */
+        .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.4s; cursor: zoom-out; }
+        .lightbox.active { opacity: 1; visibility: visible; }
+        .lightbox img { max-width: 90%; max-height: 90vh; object-fit: contain; border-radius: 4px; transform: scale(0.8); transition: transform 0.5s; }
+        .lightbox.active img { transform: scale(1); }
+        .lightbox-close { position: absolute; top: 30px; right: 30px; color: white; font-size: 2rem; cursor: pointer; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; transition: all 0.3s; }
+        .lightbox-close:hover { border-color: white; transform: rotate(90deg); }
+
+        .back-to-top { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; background: var(--night); border: none; border-radius: 50%; color: white; font-size: 1.2rem; cursor: pointer; opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        .back-to-top.visible { opacity: 1; visibility: visible; }
+        .back-to-top:hover { background: var(--forest); transform: translateY(-5px) scale(1.1); }
+
+        footer { background: var(--night); color: white; padding: 60px; text-align: center; }
+        footer p { font-size: 0.85rem; color: var(--sand); }
+
+        @media (max-width: 768px) {
+            .cursor-dot, .cursor-ring { display: none; }
+            .nav-links { display: none; }
+            .insights-grid { grid-template-columns: 1fr; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .section { padding: 60px 25px; }
+        }
+    </style>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()"><img src="" alt="" id="lightboxImg"><div class="lightbox-close">✕</div></div>
+
+<nav>
+    <a href="index.html" class="logo">SERBIA</a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="destinations.html">Destinations</a></li>
+        <li><a href="culture.html">Culture</a></li>
+        <li><a href="practical.html" class="active">Insights</a></li>
+        <li><a href="guide.html">Guide</a></li>
+    </ul>
+</nav>
+
+<header class="page-header">
+    <h1>Industry & Insights</h1>
+    <p>Understanding Serbia's tourism landscape — from policy advantages to emerging trends</p>
+</header>
+
+<!-- Stats -->
+<div class="stats-bar">
+    <div class="stat"><div class="stat-num" data-target="30">0</div><div class="stat-label">Visa-Free Days</div></div>
+    <div class="stat"><div class="stat-num" data-target="7">0</div><div class="stat-label">UNESCO Sites</div></div>
+    <div class="stat"><div class="stat-num" data-target="5">0</div><div class="stat-label">National Parks</div></div>
+    <div class="stat"><div class="stat-num" data-target="100">0</div><div class="stat-label">% Safe Rating</div></div>
+</div>
+
+<!-- Policy -->
+<section class="section section-white">
+    <p class="section-label">Policy Advantage</p>
+    <h2 class="section-title">Policy-Driven Tourism</h2>
+    <div class="insights-grid">
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/政策驱动.png" alt="Visa Policy" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">🛂 Policy</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>Visa-Free Entry</h3>
+                <p>With a <strong>visa-free policy</strong> for Chinese citizens, Serbia makes it easier than ever for travelers to explore its charms. The profile of incoming Chinese tourists has shifted notably, with a growing share of independent and in-depth travelers.</p>
+            </div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/小众目的地.png" alt="Niche Appeal" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">📱 Trending</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>The "Niche" Appeal</h3>
+                <p>Thanks to its unique Eastern European flair and great value, Serbia has quietly gone viral on platforms like Xiaohongshu and TikTok, becoming a new favorite among young Chinese travelers. It offers all the rewards of travel — without the crowds.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sustainability -->
+<section class="section section-cream">
+    <p class="section-label">Heritage Preservation</p>
+    <h2 class="section-title">Sustainability & Heritage</h2>
+    <div class="insights-grid">
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/可持续1.png" alt="Monastery" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">🏛️ Heritage</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>Monastery Legacy</h3>
+                <p>Serbia treasures its rich legacy of medieval monasteries, pursuing sustainable preservation even as tourism grows. UNESCO-listed sites like <strong>Studenica Monastery</strong> continue to guard centuries of faith and artistry.</p>
+            </div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/可持续2.png" alt="Nature" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">🌿 Sustainable</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>Balanced Development</h3>
+                <p>While developing its tourism industry, Serbia maintains its original charm. The country's pristine natural landscapes and traditional culture remain well-preserved, offering visitors an authentic experience far from mass tourism.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- More Niche Destinations -->
+<section class="section section-white">
+    <p class="section-label">Emerging Trends</p>
+    <h2 class="section-title">Hidden Gem Destinations</h2>
+    <div class="insights-grid">
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/小众目的地2.png" alt="Hidden Gems" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">✨ Hidden</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>Off-the-Beaten-Path</h3>
+                <p>Beyond Belgrade and Novi Sad, Serbia offers countless undiscovered treasures: the ethereal <strong>Uvac Canyon</strong> meanders, the fairy-tale village of <strong>Drvengrad</strong>, and the pristine wilderness of <strong>Đerdap National Park</strong>.</p>
+            </div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/小众3.png" alt="Alternative Routes" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">🗺️ Routes</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>Alternative Itineraries</h3>
+                <p>Young travelers are increasingly designing their own routes: wine tasting in Fruška Gora, monastery trails in central Serbia, or a <strong>"Danube Journey"</strong> from Belgrade to the Iron Gates — unique, personalized adventures.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- More Sustainability -->
+<section class="section section-cream">
+    <p class="section-label">Eco-Tourism</p>
+    <h2 class="section-title">Preserving Paradise</h2>
+    <div class="insights-grid">
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/可持续3.png" alt="Eco Initiatives" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">🌱 Eco</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>Green Initiatives</h3>
+                <p>Serbia is developing eco-tourism in national parks, promoting responsible wildlife viewing (especially the griffon vultures of Uvac), and supporting traditional crafts communities — all while preserving the authentic character of rural villages.</p>
+            </div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/政策2.png" alt="Future Vision" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">📈 Growth</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>Strategic Development</h3>
+                <p>Serbia's tourism strategy focuses on sustainable growth: improving infrastructure, expanding flight connections with China, and developing niche products like <strong>wine tourism, spa resorts, and adventure travel</strong>.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- More Connectivity -->
+<section class="section section-white">
+    <p class="section-label">Infrastructure</p>
+    <h2 class="section-title">Connecting Cultures</h2>
+    <div class="insights-grid">
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/互联互通2.png" alt="Rail Network" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">🚄 Rail</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>Modern Rail Network</h3>
+                <p>The high-speed Belgrade–Novi Sad line has reduced travel time to just <strong>35 minutes</strong>. Plans are underway to expand the network, connecting more Serbian cities and improving cross-border links to Budapest and beyond.</p>
+            </div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-card-img">
+                <img src="practical/互联互通3.png" alt="Direct Flights" onclick="openLightbox(this.src)">
+                <div class="insight-card-badge">✈️ Direct</div>
+            </div>
+            <div class="insight-card-body">
+                <h3>Direct Flights</h3>
+                <p><strong>Hainan Airlines</strong> and <strong>Air Serbia</strong> operate direct flights between Beijing/Tianjin and Belgrade, with flight times around 10-12 hours. More routes are expected as demand grows.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Belt & Road -->
+<section class="section section-dark">
+    <p class="section-label">Connectivity</p>
+    <h2 class="section-title">Belt and Road Initiative</h2>
+    <div class="belt-section">
+        <img src="practical/互联互通1.png" alt="Belgrade-Budapest Railway" class="belt-img" onclick="openLightbox(this.src)">
+        <div class="belt-content">
+            <h3>"One Belt, One Road"</h3>
+            <p>The Belgrade–Budapest railway, a flagship project of the Belt and Road Initiative, is enhancing Serbia's transport infrastructure and making travel faster, smoother, and more convenient than ever. This historic connection strengthens cultural and economic ties between China and Serbia.</p>
+        </div>
+    </div>
+</section>
+
+<footer><p>Serbia Tourism Guide — Your Gateway to the Balkans</p></footer>
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// Scroll
+window.addEventListener('scroll',()=>{const s=window.scrollY,d=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('scrollProgress').style.width=(s/d)*100+'%';document.getElementById('backToTop').classList.toggle('visible',s>400);});
+
+// Cursor
+const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing');let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx-4+'px';dot.style.top=my-4+'px';});
+(function ac(){rx+=(mx-rx)*0.15;ry+=(my-ry)*0.15;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ac);})();
+document.querySelectorAll('a,button,.insight-card,.stat').forEach(el=>{el.addEventListener('mouseenter',()=>ring.classList.add('hover'));el.addEventListener('mouseleave',()=>ring.classList.remove('hover'));});
+
+// Reveal sections
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.15});
+document.querySelectorAll('.section').forEach(el=>obs.observe(el));
+
+// Animate numbers
+const statObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting&&!e.target.dataset.animated){e.target.dataset.animated='1';const t=+e.target.dataset.target;let c=0;const step=t/60;const timer=setInterval(()=>{c+=step;if(c>=t){e.target.textContent=t;clearInterval(timer);}else{e.target.textContent=Math.floor(c);}},25);}});},{threshold:0.5});
+document.querySelectorAll('.stat-num').forEach(el=>statObs.observe(el));
+
+// Lightbox
+function openLightbox(src){document.getElementById('lightboxImg').src=src;document.getElementById('lightbox').classList.add('active');document.body.style.overflow='hidden';}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('active');document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox();});
+</script>
+</body>
+</html>
