@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💎 3D纪念日相册 - 纪念版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #0a0018 0%, #030008 50%, #000000 100%);
+            font-family: 'Optima', 'Candara', sans-serif;
+        }
+
+        #webgl-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #video-element {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 180px;
+            height: 135px;
+            border-radius: 15px;
+            border: 2px solid rgba(232, 196, 160, 0.4);
+            transform: scaleX(-1);
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            display: none;
+        }
+
+        #video-element.active { display: block; }
+
+        .gesture-hint {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(232, 196, 160, 0.3);
+            border-radius: 30px;
+            padding: 15px 35px;
+            color: #e8c4a0;
+            font-size: 16px;
+            letter-spacing: 2px;
+            z-index: 60;
+            transition: all 0.4s;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .gesture-hint.active {
+            opacity: 1;
+            background: rgba(232, 196, 160, 0.2);
+            border-color: rgba(232, 196, 160, 0.5);
+            box-shadow: 0 0 40px rgba(232, 196, 160, 0.3);
+        }
+
+        .gesture-icon { font-size: 24px; margin-bottom: 5px; }
+
+        .start-hint {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(15,8,18,0.9), rgba(30,15,35,0.9));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,182,200,0.4);
+            border-radius: 40px;
+            padding: 16px 45px;
+            color: #ffe4ec;
+            font-size: 15px;
+            letter-spacing: 2px;
+            z-index: 65;
+            transition: all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: 0 0 50px rgba(255,182,200,0.2);
+            font-family: 'Optima', serif;
+        }
+
+        .start-hint.show {
+            opacity: 1;
+            animation: hintPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes hintPulse {
+            0%, 100% {
+                box-shadow: 0 0 50px rgba(255,182,200,0.2);
+                transform: translateX(-50%) scale(1);
+            }
+            50% {
+                box-shadow: 0 0 80px rgba(255,182,200,0.4);
+                transform: translateX(-50%) scale(1.02);
+            }
+        }
+
+        .upload-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(180deg, rgba(15,8,18,0.95) 0%, rgba(5,5,16,0.95) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(232,196,160,0.25);
+            border-radius: 30px;
+            padding: 40px 55px;
+            z-index: 200;
+            text-align: center;
+            width: 520px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 50px rgba(232,196,160,0.05);
+        }
+
+        .upload-panel.hidden { display: none; }
+
+        .upload-title {
+            font-size: 26px;
+            margin-bottom: 18px;
+            letter-spacing: 4px;
+            font-family: 'Optima', serif;
+            background: linear-gradient(135deg, #e8c4a0, #ffb6c8, #ffe4ec);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(232,196,160,0.2));
+            white-space: nowrap;
+        }
+
+        .upload-subtitle {
+            font-size: 13px;
+            color: rgba(232,196,160,0.85);
+            margin-bottom: 22px;
+            letter-spacing: 1.5px;
+            line-height: 2.1;
+            font-family: 'Optima', serif;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(232,196,160,0.35);
+            border-radius: 25px;
+            padding: 40px 30px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+            margin-bottom: 22px;
+            background: rgba(232,196,160,0.02);
+        }
+
+        .upload-area:hover {
+            border-color: rgba(232,196,160,0.8);
+            background: rgba(232,196,160,0.08);
+            transform: scale(1.03);
+            box-shadow: 0 0 30px rgba(232,196,160,0.15);
+        }
+
+        .upload-icon { font-size: 45px; margin-bottom: 14px; animation: floatIcon 3s ease-in-out infinite; }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .upload-text { color: rgba(232,196,160,0.95); font-size: 14px; letter-spacing: 1.5px; font-family: 'Optima', serif; }
+
+        .upload-input { display: none; }
+
+        .start-btn {
+            padding: 14px 60px;
+            background: linear-gradient(135deg, #e8c4a0 0%, #d4a87a 50%, #b38a5f 100%);
+            border: none;
+            border-radius: 35px;
+            color: #0f0a12;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 4px;
+            cursor: pointer;
+            transition: all 0.4s;
+            box-shadow: 0 8px 30px rgba(232,196,160,0.25);
+        }
+
+        .start-btn:hover:not(:disabled) {
+            box-shadow: 0 12px 45px rgba(232,196,160,0.4);
+            transform: translateY(-3px) scale(1.02);
+        }
+
+        .start-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+        .photo-count {
+            color: rgba(232,196,160,0.65);
+            font-size: 12px;
+            margin-bottom: 20px;
+            letter-spacing: 1.5px;
+            font-family: 'Optima', serif;
+        }
+
+        .control-btns {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 70;
+        }
+
+        .ctrl-btn {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, rgba(255, 180, 220, 0.1) 0%, rgba(200, 150, 255, 0.05) 100%);
+            border: 1px solid rgba(255, 180, 220, 0.4);
+            border-radius: 30px;
+            color: #ffd0e8;
+            font-size: 14px;
+            cursor: pointer;
+            backdrop-filter: blur(15px);
+            transition: 0.4s;
+            box-shadow: 0 0 20px rgba(255, 150, 200, 0.1);
+        }
+
+        .ctrl-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 180, 220, 0.2) 0%, rgba(200, 150, 255, 0.1) 100%);
+            box-shadow: 0 0 40px rgba(255, 150, 200, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .ctrl-btn.active { 
+            background: linear-gradient(135deg, rgba(255, 180, 220, 0.3) 0%, rgba(200, 150, 255, 0.15) 100%); 
+            border-color: #ffd0e8;
+            box-shadow: 0 0 50px rgba(255, 150, 200, 0.4);
+        }
+
+        .photo-viewer {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 16, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            cursor: zoom-out;
+        }
+
+        .photo-viewer.active { display: flex; }
+
+        .photo-viewer img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 12px;
+            box-shadow: 0 0 60px rgba(232, 196, 160, 0.4);
+            animation: zoomIn 0.3s ease-out;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .photo-viewer-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            font-size: 32px;
+            color: #e8c4a0;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .photo-viewer-close:hover { opacity: 1; }
+
+        .gesture-instructions {
+            position: fixed;
+            top: 20px;
+            right: 210px;
+            background: rgba(10, 10, 20, 0.85);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(232, 196, 160, 0.2);
+            border-radius: 20px;
+            padding: 20px 25px;
+            color: #e8c4a0;
+            font-size: 13px;
+            z-index: 70;
+            text-align: left;
+            line-height: 2;
+            max-width: 320px;
+        }
+
+        .gesture-instructions.hidden { display: none; }
+
+        .instructions-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #e8c4a0;
+            margin-bottom: 12px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .gesture-instructions div {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .gesture-instructions div:hover { background: rgba(232, 196, 160, 0.1); }
+
+        .gesture-instructions span:first-child { font-size: 18px; }
+
+        .gesture-instructions .note {
+            font-size: 11px;
+            color: rgba(232, 196, 160, 0.6);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(232, 196, 160, 0.2);
+        }
+
+        .rules-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(232, 196, 160, 0.3);
+            border-radius: 25px;
+            color: #e8c4a0;
+            font-size: 13px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 75;
+        }
+
+        .rules-btn:hover {
+            background: rgba(232, 196, 160, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .rules-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 16, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 600;
+        }
+
+        .rules-modal.active { display: flex; }
+
+        .rules-content {
+            background: rgba(10, 10, 20, 0.85);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(232, 196, 160, 0.2);
+            border-radius: 20px;
+            padding: 35px 45px;
+            max-width: 550px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .rules-title {
+            font-size: 22px;
+            color: #fff;
+            margin-bottom: 25px;
+            text-align: center;
+            letter-spacing: 3px;
+            background: linear-gradient(to right, #e8c4a0, #ffb6c8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .rules-section { margin-bottom: 20px; }
+
+        .rules-section-title {
+            font-size: 15px;
+            color: #e8c4a0;
+            margin-bottom: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .rules-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 228, 236, 0.85);
+            margin-bottom: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .rules-icon { font-size: 20px; }
+
+        .rules-tip {
+            font-size: 12px;
+            color: rgba(232, 196, 160, 0.7);
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(232, 196, 160, 0.2);
+            line-height: 1.6;
+        }
+
+        .rules-close {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            font-size: 28px;
+            color: #e8c4a0;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .rules-close:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loading-screen" style="position: fixed; inset: 0; background: #050510; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;">
+        <div style="font-size: 60px; animation: heartbeat 1.2s ease-in-out infinite;">💕</div>
+        <div style="color: #e8c4a0; font-size: 16px; margin-top: 25px; letter-spacing: 3px;">正在加载...</div>
+    </div>
+
+    <canvas id="webgl-canvas"></canvas>
+    <video id="video-element" autoplay playsinline></video>
+
+    <div class="control-btns">
+        <button class="ctrl-btn" id="btn-gesture" onclick="toggleGesture()">🖐 交互模式</button>
+        <button class="ctrl-btn" id="btn-explode" onclick="triggerExplosion()">💥 <span id="btn-text">触发爆炸</span></button>
+    </div>
+
+    <button class="rules-btn" onclick="showRules()">📖 使用规则</button>
+
+    <div class="gesture-instructions" id="gesture-instructions">
+        <div class="instructions-title">🎯 手势操作</div>
+        <div>🖐 张开手掌 → 爆炸散开</div>
+        <div>✊ 握紧拳头 → 收回爱心</div>
+        <div class="note">💡 提示：点击照片可放大查看</div>
+    </div>
+
+    <div class="upload-panel" id="upload-panel">
+        <h2 class="upload-title">「 Evolver Realm 」</h2>
+        <p class="upload-subtitle" style="margin-top: 10px; line-height: 2;">宇宙本是荒芜的流浪，直到你挥手，<br>赋予三十四颗星辰形状。<br>跨越维度，将 Evol 翻转为 Love ——<br>此间星域，唯你一人。</p>
+        <p class="upload-subtitle" style="margin-top: 20px; font-size: 13px; color: rgba(232, 196, 160, 0.7);">建议上传 34 张照片，构建完美心形</p>
+        <div class="upload-area" onclick="document.getElementById('photo-input').click()">
+            <div class="upload-icon">✨</div>
+            <div class="upload-text">点击选择您的珍贵瞬间</div>
+        </div>
+        <input type="file" id="photo-input" class="upload-input" multiple accept="image/*">
+        <div class="photo-count" id="photo-count">已选择: 0 张</div>
+        <button class="start-btn" id="start-btn" onclick="startExperience()" disabled>开启星域之旅</button>
+    </div>
+
+    <div class="gesture-hint" id="gesture-hint">
+        <div class="gesture-icon" id="gesture-icon">🖐</div>
+        <div id="gesture-text">手势模式已开启</div>
+    </div>
+
+    <div class="start-hint" id="start-hint">
+        ✨ 移动鼠标查看视角，或点击左上角「手势模式」开启操作
+    </div>
+
+
+
+    <div class="photo-viewer" id="photo-viewer" onclick="closePhotoViewer()">
+        <div class="photo-viewer-close">✕</div>
+        <img id="photo-viewer-img" src="" alt="">
+    </div>
+
+    <div class="rules-modal" id="rules-modal" onclick="hideRules(event)">
+        <div class="rules-content" onclick="event.stopPropagation()">
+            <div class="rules-close" onclick="hideRules(event)">✕</div>
+            <div class="rules-title">📖 使用规则</div>
+            
+            <div class="rules-section">
+                <div class="rules-section-title">🎮 手势操作</div>
+                <div class="rules-item">
+                    <span class="rules-icon">🖐</span>
+                    <span>张开手掌：爆炸散开照片</span>
+                </div>
+                <div class="rules-item">
+                    <span class="rules-icon">✊</span>
+                    <span>握紧拳头：收回爱心形状</span>
+                </div>
+            </div>
+
+            <div class="rules-section">
+                <div class="rules-section-title">🖱️ 鼠标操作</div>
+                <div class="rules-item">
+                    <span class="rules-icon">💥</span>
+                    <span>点击"触发爆炸"按钮切换状态</span>
+                </div>
+                <div class="rules-item">
+                    <span class="rules-icon">📸</span>
+                    <span>点击照片：放大查看大图</span>
+                </div>
+                <div class="rules-item">
+                    <span class="rules-icon">🎯</span>
+                    <span>移动鼠标：控制场景视角旋转</span>
+                </div>
+            </div>
+
+            <div class="rules-tip">
+                ⚠️ 注意事项：<br>
+                • 手势模式需要摄像头权限<br>
+                • 摄像头尽量正对手掌<br>
+                • 光线充足时识别更准确<br>
+                • 连续操作有短暂冷却时间
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+
+    <script>
+        const PHOTO_COUNT = 34;
+        const state = {
+            photos: [],
+            isExploded: false,
+            isTransitioning: false,
+            gestureMode: false,
+            cameraActive: false,
+            handPresent: false,
+            handX: 0.5,
+            handY: 0.5,
+            mouseX: 0.5,
+            mouseY: 0.5,
+            heartbeatPhase: 0,
+            hoveredPhotoIndex: -1,
+            zoomedPhoto: null,
+            gestureCooldown: false,
+            lastGesture: null
+        };
+
+        let scene, camera, renderer;
+        let photoMeshes = [];
+        let starParticles;
+        let coreLight;
+        let raycaster, mouse;
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x050010, 0.014);
+            scene.background = new THREE.Color(0x020008);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 35;
+
+            renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('webgl-canvas'),
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.toneMapping = THREE.ReinhardToneMapping;
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            const ambientLight = new THREE.AmbientLight(0xfff0f8, 0.35);
+            scene.add(ambientLight);
+
+            coreLight = new THREE.PointLight(0xffc0d0, 6, 60);
+            scene.add(coreLight);
+
+            const topLight = new THREE.SpotLight(0xffe0ec, 1.2);
+            topLight.position.set(0, 50, 20);
+            scene.add(topLight);
+
+            const sideLight1 = new THREE.PointLight(0xffb0c0, 0.8, 80);
+            sideLight1.position.set(30, 10, 0);
+            scene.add(sideLight1);
+
+            const sideLight2 = new THREE.PointLight(0xe0c0ff, 0.6, 80);
+            sideLight2.position.set(-30, 10, 0);
+            scene.add(sideLight2);
+
+            createPhotoMeshes();
+            createStarParticles();
+
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('click', onMouseClick);
+            window.addEventListener('mousemove', onMouseMove);
+        }
+
+        function createPhotoMeshes() {
+            const frameMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffd0e0,
+                metalness: 0.95,
+                roughness: 0.08,
+                emissive: 0x4a1030,
+                emissiveIntensity: 0.6
+            });
+
+            const heartPoints = generateHeartPoints(PHOTO_COUNT);
+
+            for (let i = 0; i < PHOTO_COUNT; i++) {
+                const group = new THREE.Group();
+
+                const frame = new THREE.Mesh(
+                    new THREE.BoxGeometry(3.2, 4.2, 0.18),
+                    frameMaterial
+                );
+                group.add(frame);
+
+                const photo = new THREE.Mesh(
+                    new THREE.PlaneGeometry(2.9, 3.9),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x333333,
+                        side: THREE.DoubleSide
+                    })
+                );
+                photo.position.z = 0.09;
+                group.add(photo);
+
+                const pos = heartPoints[i];
+                group.position.copy(pos);
+                group.lookAt(0, 0, 0);
+
+                group.userData = {
+                    heartPosition: pos.clone(),
+                    explodedPosition: new THREE.Vector3(),
+                    explodedRotation: new THREE.Vector3(),
+                    angularVelocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.02,
+                        (Math.random() - 0.5) * 0.02,
+                        (Math.random() - 0.5) * 0.01
+                    ),
+                    floatOffset: Math.random() * Math.PI * 2,
+                    floatSpeed: 0.4 + Math.random() * 0.4
+                };
+
+                photoMeshes.push(group);
+                scene.add(group);
+            }
+        }
+
+        function generateHeartPoints(count) {
+            const points = [];
+            for (let i = 0; i < count; i++) {
+                const t = (i / count) * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                const z = Math.cos(t * 2) * 3 + (Math.random() - 0.5) * 2.5;
+                points.push(new THREE.Vector3(x * 0.75, y * 0.75, z * 0.9));
+            }
+            return points;
+        }
+
+        function createStarParticles() {
+            const particleCount = 5000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+
+            for (let i = 0; i < particleCount; i++) {
+                const radius = 40 + Math.random() * 80;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+
+                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = radius * Math.cos(phi);
+
+                const hue = Math.random() * 0.12;
+                const saturation = 0.7 + Math.random() * 0.3;
+                const lightness = 0.8 + Math.random() * 0.2;
+                const color = new THREE.Color().setHSL(hue, saturation, lightness);
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+
+                sizes[i] = 0.08 + Math.random() * 0.35;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 }
+                },
+                vertexShader: `
+                    attribute float size;
+                    varying vec3 vColor;
+                    uniform float time;
+                    void main() {
+                        vColor = color;
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        float sparkle = 0.6 + 0.4 * sin(time * 3.5 + position.x * 0.5 + position.y * 0.5);
+                        gl_PointSize = size * (350.0 / -mvPosition.z) * sparkle;
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    uniform float time;
+                    void main() {
+                        float dist = length(gl_PointCoord - vec2(0.5));
+                        if (dist > 0.5) discard;
+                        float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+                        float glow = exp(-dist * 12.0);
+                        gl_FragColor = vec4(vColor, alpha + glow * 0.5);
+                    }
+                `,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                vertexColors: true,
+                depthWrite: false
+            });
+
+            starParticles = new THREE.Points(geometry, material);
+            scene.add(starParticles);
+        }
+
+        function triggerExplosion() {
+            if (state.isTransitioning) return;
+            state.isTransitioning = true;
+
+            state.isExploded = !state.isExploded;
+
+            document.getElementById('btn-text').textContent = state.isExploded ? '💕 收回爱心' : '💥 触发爆炸';
+
+            if (state.isExploded) {
+                photoMeshes.forEach(mesh => {
+                    const heartPos = mesh.userData.heartPosition.clone();
+                    const heartDir = heartPos.clone().normalize();
+                    const heartDist = heartPos.length();
+
+                    const randomAngle = Math.random() * Math.PI * 2;
+                    const randomPhi = Math.acos((Math.random() * 2) - 1);
+
+                    const baseDist = 20 + heartDist * 1.5;
+                    const randomOffset = Math.random() * 25;
+                    const dist = baseDist + randomOffset;
+
+                    const blendFactor = 0.65;
+                    const finalPos = new THREE.Vector3().lerpVectors(
+                        new THREE.Vector3(
+                            dist * Math.sin(randomPhi) * Math.cos(randomAngle),
+                            dist * Math.sin(randomPhi) * Math.sin(randomAngle),
+                            dist * Math.cos(randomPhi)
+                        ),
+                        heartDir.clone().multiplyScalar(baseDist + randomOffset * 0.4),
+                        blendFactor
+                    );
+
+                    mesh.userData.explodedPosition.copy(finalPos);
+
+                    mesh.userData.explodedRotation.set(
+                        (Math.random() - 0.5) * Math.PI * 2.5,
+                        (Math.random() - 0.5) * Math.PI * 3,
+                        (Math.random() - 0.5) * Math.PI * 2
+                    );
+                });
+            }
+
+            setTimeout(() => {
+                state.isTransitioning = false;
+            }, 1000);
+        }
+
+        function updatePhotos(deltaTime) {
+            const lerpSpeed = state.isTransitioning ? 
+                (state.isExploded ? 0.12 : 0.1) : 0.05;
+
+            photoMeshes.forEach(mesh => {
+                const ud = mesh.userData;
+
+                if (state.isExploded) {
+                    mesh.position.lerp(ud.explodedPosition, lerpSpeed);
+                    mesh.rotation.x += ud.angularVelocity.x;
+                    mesh.rotation.y += ud.angularVelocity.y;
+                    mesh.rotation.z += ud.angularVelocity.z;
+
+                    mesh.position.x += Math.sin(Date.now() * 0.0008 * ud.floatSpeed + ud.floatOffset) * 0.008;
+                    mesh.position.y += Math.cos(Date.now() * 0.001 * ud.floatSpeed + ud.floatOffset) * 0.008;
+                } else {
+                    const targetPos = ud.heartPosition.clone();
+
+                    if (state.isTransitioning) {
+                        const direction = targetPos.clone().sub(mesh.position);
+                        const distance = direction.length();
+                        if (distance > 0.1) {
+                            const pullStrength = Math.min(distance * 0.15, 0.3);
+                            mesh.position.add(direction.normalize().multiplyScalar(pullStrength));
+                        }
+                        mesh.rotation.x += ud.angularVelocity.x * 0.3;
+                        mesh.rotation.y += ud.angularVelocity.y * 0.3;
+                    } else {
+                        mesh.position.lerp(targetPos, lerpSpeed);
+                        const lookAtMatrix = new THREE.Matrix4();
+                        lookAtMatrix.lookAt(camera.position, mesh.position, new THREE.Vector3(0, 1, 0));
+                        const targetQuaternion = new THREE.Quaternion().setFromRotationMatrix(lookAtMatrix);
+                        mesh.quaternion.slerp(targetQuaternion, 0.1);
+                    }
+                }
+            });
+
+            if (coreLight) {
+                if (state.isTransitioning && !state.isExploded) {
+                    coreLight.intensity = Math.min(coreLight.intensity + 0.35, 10);
+                } else {
+                    coreLight.intensity = 6;
+                }
+            }
+        }
+
+        function updateParticles(time) {
+            if (starParticles && starParticles.material.uniforms) {
+                starParticles.rotation.y += 0.0008;
+                starParticles.rotation.x = Math.sin(time * 0.3) * 0.05;
+                starParticles.material.uniforms.time.value = time;
+            }
+        }
+
+        function updateCamera() {
+            if (state.gestureMode && state.handPresent) {
+                const targetRX = (state.handY - 0.5) * 2.5;
+                const targetRY = (state.handX - 0.5) * 2.5;
+                camera.position.x += (targetRY * 50 - camera.position.x) * 0.12;
+                camera.position.y += (-targetRX * 50 - camera.position.y) * 0.12;
+                camera.lookAt(0, 0, 0);
+            } else if (!state.gestureMode) {
+                const targetRX = (state.mouseY - 0.5) * 2.0;
+                const targetRY = (state.mouseX - 0.5) * 2.0;
+                camera.position.x += (targetRY * 40 - camera.position.x) * 0.08;
+                camera.position.y += (-targetRX * 40 - camera.position.y) * 0.08;
+                camera.lookAt(0, 0, 0);
+            }
+        }
+        function onMouseMove(event) {
+            state.mouseX = event.clientX / window.innerWidth;
+            state.mouseY = event.clientY / window.innerHeight;
+        }
+
+        function selectPhoto(pointerX, pointerY) {
+            if (state.zoomedPhoto !== null) return;
+
+            mouse.x = (pointerX / window.innerWidth) * 2 - 1;
+            mouse.y = -(pointerY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(photoMeshes, true);
+
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while (obj.parent && !photoMeshes.includes(obj)) {
+                    obj = obj.parent;
+                }
+                if (photoMeshes.includes(obj)) {
+                    const photoMesh = obj.children[1];
+                    if (photoMesh.material.map) {
+                        openPhotoViewer(photoMesh.material.map.image);
+                    }
+                }
+            }
+        }
+
+        function onMouseClick(event) {
+            selectPhoto(event.clientX, event.clientY);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function openPhotoViewer(img) {
+            const viewer = document.getElementById('photo-viewer');
+            const viewerImg = document.getElementById('photo-viewer-img');
+            viewerImg.src = img.src;
+            viewer.classList.add('active');
+            state.zoomedPhoto = img;
+        }
+
+        function closePhotoViewer() {
+            document.getElementById('photo-viewer').classList.remove('active');
+            state.zoomedPhoto = null;
+        }
+
+        async function initMediaPipe() {
+            const video = document.getElementById('video-element');
+            const hands = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+            });
+
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.65,
+                minTrackingConfidence: 0.55
+            });
+
+            hands.onResults(onHandResults);
+
+            const camera = new Camera(video, {
+                onFrame: async () => await hands.send({ image: video }),
+                width: 640,
+                height: 480
+            });
+
+            await camera.start();
+            video.classList.add('active');
+            state.cameraActive = true;
+        }
+
+        function onHandResults(results) {
+            if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+                state.handPresent = false;
+                updateGestureUI(null);
+                return;
+            }
+
+            state.handPresent = true;
+            const landmarks = results.multiHandLandmarks[0];
+
+            const indexTip = landmarks[8];
+            state.handX = 1 - indexTip.x;
+            state.handY = indexTip.y;
+
+            const gesture = detectGesture(landmarks);
+
+            if (gesture !== state.lastGesture) {
+                updateGestureUI(gesture);
+                state.lastGesture = gesture;
+
+                if (state.gestureCooldown) return;
+
+                if (gesture === 'open' && !state.isExploded && !state.isTransitioning) {
+                    triggerExplosion();
+                    state.gestureCooldown = true;
+                    setTimeout(() => { state.gestureCooldown = false; }, 800);
+                } else if (gesture === 'fist' && state.isExploded && !state.isTransitioning) {
+                    triggerExplosion();
+                    state.gestureCooldown = true;
+                    setTimeout(() => { state.gestureCooldown = false; }, 600);
+                }
+            }
+        }
+
+        function detectGesture(landmarks) {
+            const thumbTip = landmarks[4];
+            const indexTip = landmarks[8];
+            const middleTip = landmarks[12];
+            const ringTip = landmarks[16];
+            const pinkyTip = landmarks[20];
+            const palmCenter = landmarks[9];
+
+            const thumbPalmDist = Math.sqrt(
+                Math.pow(thumbTip.x - palmCenter.x, 2) +
+                Math.pow(thumbTip.y - palmCenter.y, 2) +
+                Math.pow(thumbTip.z - palmCenter.z, 2)
+            );
+            const indexPalmDist = Math.sqrt(
+                Math.pow(indexTip.x - palmCenter.x, 2) +
+                Math.pow(indexTip.y - palmCenter.y, 2) +
+                Math.pow(indexTip.z - palmCenter.z, 2)
+            );
+            const middlePalmDist = Math.sqrt(
+                Math.pow(middleTip.x - palmCenter.x, 2) +
+                Math.pow(middleTip.y - palmCenter.y, 2) +
+                Math.pow(middleTip.z - palmCenter.z, 2)
+            );
+            const ringPalmDist = Math.sqrt(
+                Math.pow(ringTip.x - palmCenter.x, 2) +
+                Math.pow(ringTip.y - palmCenter.y, 2) +
+                Math.pow(ringTip.z - palmCenter.z, 2)
+            );
+            const pinkyPalmDist = Math.sqrt(
+                Math.pow(pinkyTip.x - palmCenter.x, 2) +
+                Math.pow(pinkyTip.y - palmCenter.y, 2) +
+                Math.pow(pinkyTip.z - palmCenter.z, 2)
+            );
+
+            const fingersExtended = [
+                indexPalmDist > 0.075,
+                middlePalmDist > 0.075,
+                ringPalmDist > 0.075,
+                pinkyPalmDist > 0.075
+            ];
+
+            const extendedCount = fingersExtended.filter(Boolean).length;
+
+            const isOpen = extendedCount >= 3 && thumbPalmDist > 0.06;
+            const isFist = extendedCount <= 1 && thumbPalmDist < 0.08 && indexPalmDist < 0.08 && middlePalmDist < 0.08;
+
+            if (isOpen) return 'open';
+            if (isFist) return 'fist';
+            return 'pointing';
+        }
+
+        function updateGestureUI(gesture) {
+            const hint = document.getElementById('gesture-hint');
+            const icon = document.getElementById('gesture-icon');
+            const text = document.getElementById('gesture-text');
+            const cursor = document.getElementById('gesture-cursor');
+
+            if (gesture === 'open') {
+                hint.classList.add('active');
+                icon.textContent = '🖐';
+                text.textContent = '张开手掌 - 爆炸 ✨';
+            } else if (gesture === 'fist') {
+                hint.classList.add('active');
+                icon.textContent = '✊';
+                text.textContent = '握拳 - 收回爱心 💕';
+            } else if (gesture === 'pointing') {
+                hint.classList.add('active');
+                icon.textContent = '👆';
+                text.textContent = '移动 - 旋转视角';
+            } else {
+                hint.classList.remove('active');
+            }
+        }
+
+        async function toggleGesture() {
+            state.gestureMode = !state.gestureMode;
+            const btn = document.getElementById('btn-gesture');
+            const instructions = document.getElementById('gesture-instructions');
+            const startHint = document.getElementById('start-hint');
+
+            if (state.gestureMode) {
+                btn.classList.add('active');
+                btn.textContent = '🖐 已开启交互';
+                instructions.classList.remove('hidden');
+                startHint.classList.remove('show');
+                if (!state.cameraActive) await initMediaPipe();
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '🖐 交互模式';
+                instructions.classList.add('hidden');
+                document.getElementById('gesture-hint').classList.remove('active');
+            }
+        }
+
+        function showRules() {
+            document.getElementById('rules-modal').classList.add('active');
+        }
+
+        function hideRules(event) {
+            if (event.target.id === 'rules-modal' || event.target.classList.contains('rules-close')) {
+                document.getElementById('rules-modal').classList.remove('active');
+            }
+        }
+
+        document.getElementById('photo-input').addEventListener('change', (e) => {
+            state.photos = Array.from(e.target.files).slice(0, PHOTO_COUNT);
+            document.getElementById('photo-count').textContent = `已选择: ${state.photos.length} / 34 张`;
+            document.getElementById('start-btn').disabled = state.photos.length < 1;
+        });
+
+        function startExperience() {
+            document.getElementById('upload-panel').classList.add('hidden');
+            document.getElementById('start-hint').classList.add('show');
+            const loader = new THREE.TextureLoader();
+
+            state.photos.forEach((file, i) => {
+                const url = URL.createObjectURL(file);
+                loader.load(url, (texture) => {
+                    if (photoMeshes[i]) {
+                        const photoMesh = photoMeshes[i].children[1];
+                        photoMesh.material.map = texture;
+                        photoMesh.material.color.set(0xffffff);
+                        photoMesh.material.needsUpdate = true;
+                    }
+                });
+            });
+        }
+
+        let lastTime = performance.now();
+
+        function animate(currentTime) {
+            requestAnimationFrame(animate);
+
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            updatePhotos(deltaTime);
+            updateParticles(currentTime * 0.001);
+            updateCamera();
+
+            renderer.render(scene, camera);
+        }
+
+        function init() {
+            initThreeJS();
+            animate(performance.now());
+
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+            }, 1000);
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
